@@ -77,7 +77,9 @@ const PromiseUtils = {
   },
 
   isThenable(thing) {
-    return thing.then && thing.then instanceof 'function';
+    return Boolean(
+      thing && thing.then && typeof thing.then === 'function'
+    );
   }
 };
 
