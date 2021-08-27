@@ -723,7 +723,7 @@ describe('Maybe', () => {
       expect(maybe.isReady()).toBe(false);
       const caughtMaybe = maybe.catch(() => value);
 
-      deferred.reject(error)
+      deferred.reject(error);
       await expect(maybe.promise()).rejects.toBe(error);
 
       expect(maybe.isRejected()).toBe(true);

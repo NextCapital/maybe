@@ -59,17 +59,6 @@
     "object-curly-spacing": [1, "always"],
     "no-const-assign": 2,
     "prefer-const": 1,
-    "prefer-arrow-callback": 1,
-    "react/display-name": 0
-  },
-  "plugins": [
-    "react"
-  ],
-  "extends": ["plugin:react/recommended"],
-  "settings": {
-    "react": {
-      "pragma": "React",
-      "version": "detect"
-    }
+    "prefer-arrow-callback": 1
   }
 }
