@@ -1,4 +1,4 @@
-const PromiseUtils = require('./promise-utils/PromiseUtils');
+const PromiseUtils = require('../promise-utils/PromiseUtils');
 const PendingValueError = require('./PendingValueError');
 
 class Maybe {
@@ -22,8 +22,8 @@ class Maybe {
     return value instanceof Maybe;
   }
 
-  static fromError(value) {
-    return new Maybe(value, true);
+  static fromError(error) {
+    return new Maybe(error, true);
   }
 
   static all(array) {
@@ -56,7 +56,9 @@ class Maybe {
     }
 
     if (isPromise) {
-      this._wrappedPromise = promise.then(
+      this._wrappedPromise = thing;
+
+      thing.then(
         (value) => this._handleResolve(value),
         (error) => this._handleReject(error)
       );
@@ -162,12 +164,20 @@ class Maybe {
   }
 
   _handleResolve(value) {
+    if (Maybe.isMaybe(value)) {
+      return this._become(value);
+    }
+
     this._isReady = true;
     this._value = value;
     this._wrappedPromise = null;
   }
 
   _handleReject(error) {
+    if (Maybe.isMaybe(error)) {
+      return this._become(error);
+    }
+
     this._isReady = true;
     this._value = error;
     this._isError = true;

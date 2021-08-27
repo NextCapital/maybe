@@ -78,8 +78,15 @@ const PromiseUtils = {
 
   isThenable(thing) {
     return Boolean(
-      thing && thing.then && typeof thing.then === 'function'
+      thing &&
+      thing !== null &&
+      typeof thing === 'object' &&
+      typeof thing.then === 'function'
     );
+  },
+
+  timeout(time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
   }
 };
 
