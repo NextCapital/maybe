@@ -2,7 +2,10 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
 
 /**
  * A queue for performing async tasks with a set amount of tasks allowed to run at once.
- * When a task completes or fails, the next task in the queue will start running.
+ *
+ * If there is room in the queue, a new task will start running immediately. Otherwise, it
+ * will be added to the queue. When a running task completes or fails, the next task in the queue
+ * will start running.
  *
  * @class
  */
@@ -25,7 +28,7 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
    * when a running task completes.
    *
    * @param {Function} task Function returning a promise. Should not do anything until invoked.
-   * @returns {Promise} promise that resolves or rejects with the task result
+   * @returns {Promise} Promise that resolves or rejects with the task result
    */
   perform(task) {
     const result = PromiseUtils.defer();
@@ -43,6 +46,14 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
     return result.promise;
   }
 
+  /**
+   * Actually runs a given task.
+   *
+   * @param {Deferred} result Output from `PromiseUtils.defer`
+   * @param {Function} task The task to perform
+   * @returns {Promise}
+   * @private
+   */
   _performTask(result, task) {
     return Promise.resolve(task()).then((value) => {
       result.resolve(value);
