@@ -36,7 +36,7 @@ For all contributions, please follow these steps:
 1. Create your own fork of the code
 2. Create a branch in your fork for any changes you want to make
 3. If you like the changes and think it would be a helpful contribution, be sure to follow our code style (link to bottom section)
-4. Include screenshots if they relevant to your issue
+4. Include screenshots if they are relevant to your issue
 5. Test your changes. Ensure 100% code coverage for unit tests and integration tests.
 6. We expect our ci task to be passing on CI, which includes lint, unit tests, integration tests, and build(s). If you have questions, the linter tells you what the rules are.
 7. Sign your commits
@@ -68,7 +68,7 @@ The core team looks at pull requests on a regular basis. After feedback is given
 
 ## Community
 
-Author: @nc-piercej @nc-kreiserm @nc-foyollec @nc-choppk
+Author: @nc-piercej @nc-kreiserm @nc-fayollec @nc-choppk
 
 Maintainers: @nc-piercej @nc-kreiserm
 
@@ -77,8 +77,6 @@ Contributors:
 ## Code, commit message, and labeling conventions
 
 ### Preferred style for code:
-
-Please reference our [code style conventions.](https://github.com/BLC/nc-code-style-conventions/tree/master/javascript) We use Airbnb as a base, so most of those rules apply.
 
 Eslint is used for checking code style. You can run `npm run lint` locally to verify. Some important mentions include:
 
@@ -92,15 +90,12 @@ While rebasing and merging both integrate changes from one branch to another, we
 
 #### Regularly add and commit your work to your branch
 
-1. **Unstaged (i.e. un-added) work cannot be recovered if overwritten**
+**Unstaged (i.e. un-added) work cannot be recovered if overwritten**
 
-2. `git add -p`
-
-3. `git commit -m "Concise but descriptive commit message" -s`
-
-4. 1. [Writing a Good Commit Message](https://chris.beams.io/posts/git-commit/)
-
-5. `git push`
+1. `git add -p`
+2. `git commit -m "Concise but descriptive commit message" -s`
+   * [Writing a Good Commit Message](https://chris.beams.io/posts/git-commit/)
+3. `git push`
 
 #### Fixing up a commit
 

@@ -5,7 +5,7 @@
  */
 const PromiseUtils = {
   /**
-   * Returns a promise that can be resolves or rejected on-demand by other code. This is
+   * Returns a promise that can be resolved or rejected on-demand by other code. This is
    * frequently useful in unit tests. Will return an object with three properties:
    *
    * - promise (Promise): The promise that can be resolved/rejected

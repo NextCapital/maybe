@@ -67,7 +67,7 @@ class Maybe {
   /**
    * Works like `Promise.all`, but for `Maybe` instances! This means:
    *
-   * - If all entries are resolves Maybe instances, we will return a `Maybe` resolved to
+   * - If all entries are resolved Maybe instances, we will return a `Maybe` resolved to
    *   an array of all resolved values.
    * - If any entry has rejected, will return a Maybe rejected to the first rejected value.
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
@@ -137,7 +137,7 @@ class Maybe {
   }
 
   /**
-   * Returns `true` if the instance is resolved. A call to `value()` will not return the resolved
+   * Returns `true` if the instance is resolved. A call to `value()` will return the resolved
    * value synchronously.
    *
    * @returns {Boolean}
@@ -221,7 +221,7 @@ class Maybe {
    * - When this maybe rejects (or immediately if it already is), resolves with the result
    *   of calling `onReject` with the rejected value.
    * - If still pending, we'll pass `onProgress` through to the promise.
-   * - If `onResolve`/`onReject` can return another `Maybe` instance, with similar behavior
+   * - The `onResolve`/`onReject` can return another `Maybe` instance, with similar behavior
    *   for when this happens for promises.
    *
    * In this way, we can "chain" together multiple maybes. The final returned Maybe will be
@@ -260,7 +260,7 @@ class Maybe {
 
   /**
    * Shortcut to `when` that attaches a handler for when the Maybe rejects. Works similarly to
-   * `reject` on promises.
+   * `catch` on promises.
    *
    * @param {Function} onReject Function called when the Maybe rejects with the rejected error.
    * @returns {Maybe}
