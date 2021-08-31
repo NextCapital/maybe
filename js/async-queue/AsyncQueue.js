@@ -24,6 +24,15 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
   }
 
   /**
+   * The length of the queue.
+   *
+   * @type {number}
+   */
+   get length() {
+    return this.queue.length;
+  }
+
+  /**
    * Performs the task immediately if possible, otherwise adds it to the queue to be performed
    * when a running task completes.
    *

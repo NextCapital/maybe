@@ -21,6 +21,13 @@ describe('AsyncQueue', () => {
     });
   });
 
+  describe('get length', () => {
+    test('returns the length of the inner queue', () => {
+      asyncQueue.queue = [1, 2, 3];
+      expect(asyncQueue).toHaveLength(3);
+    });
+  });
+
   describe('perform', () => {
     let task;
 
