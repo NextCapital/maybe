@@ -1,0 +1,46 @@
+{
+  "name": "@nextcapital/maybe",
+  "version": "0.1.0",
+  "description": "For things that are 'maybe' a promise!",
+  "license": "Apache-2.0",
+  "main": "js/index.js",
+  "files": [
+    "js"
+  ],
+  "keywords": [
+    "maybe",
+    "suspense"
+  ],
+  "engines": {
+    "node": ">=12.13.1",
+    "npm": ">=6.13.0"
+  },
+  "scripts": {
+    "ci": "npm run lint && npm run test",
+    "lint": "npm run lint:js && npm run lint:spelling",
+    "lint:js": "eslint \"js/**/*.{js,jsx}\" --cache",
+    "lint:spelling": "cspell \"js/**/*.{js,jsx}\"",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nextcapital/maybe.git"
+  },
+  "author": {
+    "name": "NextCapital Group",
+    "url": "https://nextcapital.com"
+  },
+  "bugs": {
+    "url": "https://github.com/nextcapital/maybe/issues"
+  },
+  "homepage": "https://github.com/nextcapital/maybe#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "cspell": "^4.2.8",
+    "eslint": "^7.27.0",
+    "eslint-config-airbnb-base": "^14.2.1",
+    "eslint-plugin-import": "^2.23.3",
+    "jest": "^26.6.3",
+    "jest-junit-reporter": "^1.1.0"
+  }
+}
