@@ -137,6 +137,15 @@ class Maybe {
   }
 
   /**
+   * Returns `true` if the instance is not yet resolved or rejected. The opposite of `isReady`.
+   *
+   * @returns {Boolean}
+   */
+  isPending() {
+    return !this._isReady;
+  }
+
+  /**
    * Returns `true` if the instance is resolved. A call to `value()` will return the resolved
    * value synchronously.
    *
@@ -241,7 +250,11 @@ class Maybe {
   when(onResolve, onReject, onProgress) {
     if (this.isResolved()) {
       if (onResolve) {
-        return Maybe.from(onResolve(this._value));
+        try {
+          return Maybe.from(onResolve(this._value));
+        } catch (error) { // onResolve threw an error
+          return Maybe.fromError(error);
+        }
       }
 
       return this;
@@ -249,13 +262,54 @@ class Maybe {
 
     if (this.isRejected()) {
       if (onReject) {
-        return Maybe.from(onReject(this._value));
+        try {
+          return Maybe.from(onReject(this._value));
+        } catch (error) { // onReject threw an error
+          return Maybe.fromError(error);
+        }
       }
 
       return this;
     }
 
-    return Maybe.from(this._wrappedPromise.then(onResolve, onReject, onProgress));
+    return Maybe.from(
+      this._wrappedPromise.then(
+        (value) => this._handleWhenResolve(value, onResolve),
+        (error) => this._handleWhenReject(error, onReject)
+      ).then(onResolve, onReject, onProgress)
+    );
+  }
+
+  /**
+   * If the maybe is pending when `when` is called, if the promise resolves with a maybe,
+   * we need to further evaluate that maybe's promise before calling `onResolve`/`onReject`.
+   *
+   * @param {Maybe|Promise|*} the value that this maybe's promise resolves to
+   * @returns {Promise|*}
+   * @private
+   */
+  _handleWhenResolve(value) {
+    if (Maybe.isMaybe(value)) {
+      return value.promise();
+    }
+
+    return value;
+  }
+
+  /**
+   * If the maybe is pending when `when` is called, if the promise rejects with a maybe,
+   * we need to further evaluate that maybe's promise before calling `onResolve`/`onReject`.
+   *
+   * @param {Maybe|Promise|*} the value that this maybe's promise rejects to
+   * @returns {Promise}
+   * @private
+   */
+  _handleWhenReject(error) {
+    if (Maybe.isMaybe(error)) {
+      return error.promise();
+    }
+
+    return Promise.reject(error);
   }
 
   /**
@@ -314,13 +368,15 @@ class Maybe {
     this._isReady = otherMaybe._isReady;
     this._isError = otherMaybe._isError;
     this._value = otherMaybe._value;
-    this._wrappedPromise = otherMaybe._wrappedPromise;
+    this._wrappedPromise = null;
 
-    if (!otherMaybe.isReady()) {
-      otherMaybe.when(
+    if (otherMaybe.isPending()) {
+      // The wrapped promise must take into account time to handle `_handleResolve`/`_handleReject`
+      // in this instance, so we cannot just copy `otherMaybe._wrappedPromise`.
+      this._wrappedPromise = otherMaybe.when(
         (value) => this._handleResolve(value),
         (error) => this._handleReject(error)
-      );
+      ).promise();
     }
   }
 

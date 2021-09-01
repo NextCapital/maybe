@@ -37,6 +37,7 @@ Probably best to refer to the [in-code documentation](./js/maybe/Maybe.js). The 
 - `Maybe.fromError(error)` - Creates a rejected `Maybe` for the error
 - `Maybe.all(array)` - The `Promise.all` equivalent for `Maybe`
 - `isReady` - Returns `true` if resolved or rejected, and `false` if still pending
+- `isPending` - Returns the opposite value of `isReady`
 - `isResolved` - Returns `true` if resolved
 - `isRejected` - Returns `true` if rejected
 - `value` - Returns the value if resolved, throws the error if rejected, and throws a `PendingValueError` if still pending
@@ -47,6 +48,21 @@ Probably best to refer to the [in-code documentation](./js/maybe/Maybe.js). The 
 - `finally` - The equivalent of `finally` on promises for `Maybe` instances
 - `suspend` - If ready, defers to `value`. Otherwise, throws the result of `promise`. This
   satisfies the React 18 suspense contract.
+
+### Maybe May Not Resolve/Reject in the Same Tick
+You should always `await` the result of `maybe.promise()`, rather than the promise that the
+maybe was created from, before attempting to synchronously access the maybe's value.
+
+We have to use more than one `.then` internally on the promise, which means that it can take
+several ticks after the original promise resolves for the maybe instance to adopt its state.
+
+This behavior is intrinsic to promises and cannot be fixed. However, this shouldn't be a major issue: simply await the maybe instead of the promise when a reference to both the promise and the maybe exists.
+
+### Async/Await Caveats
+You should not attempt to return a `Maybe` instance from an `async` function. All `async`
+functions return a `Promise`, so in practice you will return a promise resolved to a maybe instance.
+
+There is no equivalent to `async`/`await` syntax for maybe instancess: you'll need to use `when`. Perhaps one day `Maybe` will be integrated natively into browsers, alongside corresponding syntactic sugar. One can dream...
 
 ### Examples / Uses
 
@@ -77,7 +93,7 @@ const promise = thingThatReturnsPromiseThatResolves();
 const maybe = Maybe.from(promise);
 
 expect(maybe.isReady()).toBe(false);
-const value = await promise;
+const value = await maybe.promise();
 
 expect(maybe.isReady()).toBe(true);
 expect(maybe.isResolved()).toBe(true);
@@ -91,7 +107,7 @@ const promise = thingThatReturnsPromiseThatRejects();
 const maybe = Maybe.from(promise);
 
 expect(maybe.isReady()).toBe(false);
-const error = await promise.catch((error) => error);
+await maybe.promise().catch((error) => error);
 
 expect(maybe.isReady()).toBe(true);
 expect(maybe.isRejected()).toBe(true);
@@ -216,6 +232,24 @@ recommend:
 
 - Installing as a `dependency` if in a terminal package (one that won't be consumed by others)
 - Installing as a `peerDependencies` in all other cases. If using `npm < 7`, you may want to install as a `devDependencies` as well.
+
+### Webpack/Linking Considerations
+If you have multiple nested libraries that use `Maybe` as a `peerDepeneency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
+on your webpack config:
+
+```
+{
+  resolve: {
+    alias: {
+      '@nextcapital/maybe': require.resolve('@nextcapital/maybe')
+    }
+    // other keys
+  }
+  // the rest
+}
+```
+
+This will force webpack to use the top-level package for the linked module. See [this post](https://medium.com/@penx/managing-dependencies-in-a-node-package-so-that-they-are-compatible-with-npm-link-61befa5aaca7) for more.
 
 ## Contributing to Maybe
 
