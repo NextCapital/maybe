@@ -273,7 +273,7 @@ describe('Maybe', () => {
             const maybe = new Maybe(otherMaybe);
             deferred.resolve(value);
 
-            await promise;
+            await maybe.promise();
             expect(maybe.isResolved()).toBe(true);
             expect(maybe.value()).toBe(value);
           });
@@ -284,7 +284,7 @@ describe('Maybe', () => {
               const maybe = new Maybe(otherMaybe);
               deferred.resolve(Maybe.from(value));
 
-              await promise;
+              await maybe.promise();
               expect(maybe.isResolved()).toBe(true);
               expect(maybe.value()).toBe(value);
             });
@@ -297,7 +297,7 @@ describe('Maybe', () => {
             const maybe = new Maybe(otherMaybe);
             deferred.reject(error);
 
-            await promise.catch(() => {});
+            await maybe.promise().catch(() => {});
             expect(maybe.isRejected()).toBe(true);
             expect(maybe.valueOrError()).toBe(error);
           });
@@ -308,7 +308,7 @@ describe('Maybe', () => {
               const maybe = new Maybe(otherMaybe);
               deferred.reject(Maybe.fromError(error));
 
-              await promise.catch(() => {});
+              await maybe.promise().catch(() => {});
               expect(maybe.isRejected()).toBe(true);
               expect(maybe.valueOrError()).toBe(error);
             });
@@ -337,6 +337,29 @@ describe('Maybe', () => {
       test('returns false', () => {
         const maybe = Maybe.from(promise);
         expect(maybe.isReady()).toBe(false);
+      });
+    });
+  });
+
+  describe('isPending', () => {
+    describe('for a resolved maybe', () => {
+      test('returns false', () => {
+        const maybe = Maybe.from(value);
+        expect(maybe.isPending()).toBe(false);
+      });
+    });
+
+    describe('for a rejected maybe', () => {
+      test('returns false', () => {
+        const maybe = Maybe.fromError(error);
+        expect(maybe.isPending()).toBe(false);
+      });
+    });
+
+    describe('for an in-progress maybe', () => {
+      test('returns true', () => {
+        const maybe = Maybe.from(promise);
+        expect(maybe.isPending()).toBe(true);
       });
     });
   });
@@ -480,6 +503,20 @@ describe('Maybe', () => {
           expect(newMaybe.value()).toBe(resolvedValue);
           expect(onResolve).toBeCalledWith(value);
         });
+
+        describe('when onResolve throws an error', () => {
+          beforeEach(() => {
+            onResolve = jest.fn().mockImplementation(() => { throw error; });
+          });
+
+          test('creates a rejected maybe for the error', () => {
+            const newMaybe = maybe.when(onResolve, onReject);
+          expect(newMaybe).not.toBe(maybe);
+          expect(newMaybe.isRejected()).toBe(true);
+          expect(newMaybe.valueOrError()).toBe(error);
+          expect(onResolve).toBeCalledWith(value);
+          });
+        });
       });
 
       describe('when no onResolve is passed', () => {
@@ -500,6 +537,20 @@ describe('Maybe', () => {
           expect(newMaybe).not.toBe(maybe);
           expect(newMaybe.value()).toBe(rejectedValue);
           expect(onReject).toBeCalledWith(error);
+        });
+
+        describe('when onReject throws an error', () => {
+          beforeEach(() => {
+            onReject = jest.fn().mockImplementation(() => { throw error; });
+          });
+
+          test('creates a rejected maybe for the error', () => {
+            const newMaybe = maybe.when(onResolve, onReject);
+            expect(newMaybe).not.toBe(maybe);
+            expect(newMaybe.isRejected()).toBe(true);
+            expect(newMaybe.valueOrError()).toBe(error);
+            expect(onReject).toBeCalledWith(error);
+          });
         });
       });
 
@@ -729,7 +780,37 @@ describe('Maybe', () => {
       expect(maybe.isRejected()).toBe(true);
       expect(maybe.valueOrError()).toBe(error);
       expect(notCalledFn).not.toBeCalled();
+
+      await expect(caughtMaybe.promise()).resolves.toBe(value);
       expect(caughtMaybe.value()).toBe(value);
+    });
+
+    test('promise that resolves to a maybe', async () => {
+      const maybe = Maybe.from(42)
+        .when((time) => (
+          PromiseUtils.timeout(time)
+            .then(() => Maybe.from(PromiseUtils.timeout(2).then(() => 100)))
+        )).when((value) => {
+          expect(value).toBe(100);
+          return value * 2;
+        });
+
+      expect(await maybe.promise()).toBe(200);
+      expect(maybe.value()).toBe(200);
+    });
+
+    test('promise that resolves to a maybe', async () => {
+      const maybe = Maybe.from(42)
+        .when((time) => (
+          PromiseUtils.timeout(time)
+            .then(() => Promise.reject(Maybe.from(PromiseUtils.timeout(2).then(() => 100))))
+        )).when((value) => {
+          expect(value).toBe(100);
+          return value * 2;
+        });
+
+      expect(await maybe.promise()).toBe(200);
+      expect(maybe.value()).toBe(200);
     });
   });
 });
