@@ -113,16 +113,17 @@ class Maybe {
     }
 
     if (isPromise) {
-      this._wrappedPromise = thing;
-
-      thing.then(
+      this._wrappedPromise = thing.then(
         (value) => this._handleResolve(value),
         (error) => this._handleReject(error)
       );
+
+      // prevent unhandled rejection errors caused by the re-reject in _handleReject
+      this._wrappedPromise.catch(() => {});
     }
 
     if (isMaybe) {
-      this._become(thing);
+      this._become(thing, false);
     }
   }
 
@@ -273,43 +274,8 @@ class Maybe {
     }
 
     return Maybe.from(
-      this._wrappedPromise.then(
-        (value) => this._handleWhenResolve(value, onResolve),
-        (error) => this._handleWhenReject(error, onReject)
-      ).then(onResolve, onReject, onProgress)
+      this._wrappedPromise.then(onResolve, onReject, onProgress)
     );
-  }
-
-  /**
-   * If the maybe is pending when `when` is called, if the promise resolves with a maybe,
-   * we need to further evaluate that maybe's promise before calling `onResolve`/`onReject`.
-   *
-   * @param {Maybe|Promise|*} the value that this maybe's promise resolves to
-   * @returns {Promise|*}
-   * @private
-   */
-  _handleWhenResolve(value) {
-    if (Maybe.isMaybe(value)) {
-      return value.promise();
-    }
-
-    return value;
-  }
-
-  /**
-   * If the maybe is pending when `when` is called, if the promise rejects with a maybe,
-   * we need to further evaluate that maybe's promise before calling `onResolve`/`onReject`.
-   *
-   * @param {Maybe|Promise|*} the value that this maybe's promise rejects to
-   * @returns {Promise}
-   * @private
-   */
-  _handleWhenReject(error) {
-    if (Maybe.isMaybe(error)) {
-      return error.promise();
-    }
-
-    return Promise.reject(error);
   }
 
   /**
@@ -328,12 +294,18 @@ class Maybe {
    * we don't care if the value resolved or rejected, the method will not be called with any
    * arguments. This works similarly to `finally` on promises.
    *
+   * NOTE: Resolves/rejects with the original resolve/reject value, ignorining the result of
+   * onFinally.
+   *
    * @param {Function} onFinally Function called, without any arguments, when the maybe either
    *   resolves or rejects.
    * @returns {Maybe}
    */
   finally(onFinally) {
-    return this.when(() => onFinally(), () => onFinally());
+    return this.when(
+      (value) => Maybe.from(onFinally()).when(() => value),
+      (error) => Maybe.from(onFinally()).when(() => Maybe.fromError(error))
+    );
   }
 
   /**
@@ -362,9 +334,12 @@ class Maybe {
    * not yet ready, we'll register a `when` in order to adopt its eventual state.
    *
    * @param {Maybe} otherMaybe
+   * @param {boolean} fromPromise When `true`, this will return a promise. This is useful
+   *   when `_become` is called as part of a `then` chain. If called from the constructor,
+   *   we don't want to call `promise` to avoid an unhandled rejection error.
    * @private
    */
-  _become(otherMaybe) {
+  _become(otherMaybe, fromPromise) {
     this._isReady = otherMaybe._isReady;
     this._isError = otherMaybe._isError;
     this._value = otherMaybe._value;
@@ -377,6 +352,15 @@ class Maybe {
         (value) => this._handleResolve(value),
         (error) => this._handleReject(error)
       ).promise();
+
+      // prevent unhandled rejection errors caused by the re-reject in _handleReject
+      this._wrappedPromise.catch(() => {});
+
+      return this._wrappedPromise;
+    }
+
+    if (fromPromise) {
+      return this.promise();
     }
   }
 
@@ -384,35 +368,45 @@ class Maybe {
    * Adopts the state of of a resolved promise or Maybe. If the `value` is another Maybe,
    * we'll defer to `_become`.
    *
+   * This will re-resolve the value to preserve promise chaining.
+   *
    * @param {*} value
+   * @returns {*} the value or a promise for the value
    * @private
    */
   _handleResolve(value) {
     if (Maybe.isMaybe(value)) {
-      return this._become(value);
+      return this._become(value, true);
     }
 
     this._isReady = true;
     this._value = value;
     this._wrappedPromise = null;
+
+    return value;
   }
 
   /**
    * Adopts the state of of a rejected promise or Maybe. If the `value` is another Maybe,
    * we'll defer to `_become`.
    *
+   * This will re-reject the value to preserve promise chaining.
+   *
    * @param {*} error
+   * @returns {Promise} a promise rejected to the error
    * @private
    */
   _handleReject(error) {
     if (Maybe.isMaybe(error)) {
-      return this._become(error);
+      return this._become(error, true);
     }
 
     this._isReady = true;
     this._value = error;
     this._isError = true;
     this._wrappedPromise = null;
+
+    return Promise.reject(error);
   }
 }
 

@@ -2,6 +2,10 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
 const PendingValueError = require('./PendingValueError');
 const Maybe = require('./Maybe');
 
+process.on('unhandledRejection', (error) => {
+  fail(error); // eslint-disable-line no-undef
+});
+
 describe('Maybe', () => {
   let value, error, deferred, promise;
 
@@ -21,9 +25,10 @@ describe('Maybe', () => {
     });
 
     describe('for a promise', () => {
-      test('returns a maybe for that promise', () => {
+      test('returns a maybe for that promise', async () => {
         const maybe = Maybe.from(promise);
-        expect(maybe.promise()).toBe(promise);
+        deferred.resolve(value);
+        expect(await maybe.promise()).toBe(await promise);
       });
     });
 
@@ -63,7 +68,7 @@ describe('Maybe', () => {
 
       test('creates a maybe for the promiseGetter', () => {
         const maybe = Maybe.build(isReady, valueGetter, promiseGetter);
-        expect(maybe.promise()).toBe(promise);
+        expect(maybe.isReady()).toBe(false);
         expect(promiseGetter).toBeCalled();
         expect(valueGetter).not.toBeCalled();
       });
@@ -208,7 +213,7 @@ describe('Maybe', () => {
       test('creates a pending maybe', () => {
         const maybe = new Maybe(promise);
         expect(maybe.isReady()).toBe(false);
-        expect(maybe.promise()).toBe(promise);
+        expect(maybe.promise()).toBeInstanceOf(Promise);
       });
 
       test('ignores the error param', () => {
@@ -474,7 +479,7 @@ describe('Maybe', () => {
     describe('when pending', () => {
       test('returns the pending promise', () => {
         const maybe = Maybe.from(promise);
-        expect(maybe.promise()).toBe(promise);
+        expect(maybe.promise()).toBeInstanceOf(Promise);
       });
     });
   });
@@ -670,7 +675,7 @@ describe('Maybe', () => {
       test('creates a new resolved maybe from the return value', () => {
         const newMaybe = maybe.finally(onFinally);
         expect(newMaybe).not.toBe(maybe);
-        expect(newMaybe.value()).toBe(finallyValue);
+        expect(newMaybe.value()).toBe(value);
         expect(onFinally).toBeCalledWith();
       });
     });
@@ -683,7 +688,7 @@ describe('Maybe', () => {
       test('creates a new maybe from the return value', () => {
         const newMaybe = maybe.finally(onFinally);
         expect(newMaybe).not.toBe(maybe);
-        expect(newMaybe.value()).toBe(finallyValue);
+        expect(newMaybe.valueOrError()).toBe(error);
         expect(onFinally).toBeCalledWith();
       });
     });
@@ -700,7 +705,7 @@ describe('Maybe', () => {
           expect(newMaybe.isReady()).toBe(false);
 
           deferred.resolve(value);
-          await expect(newMaybe.promise()).resolves.toBe(finallyValue);
+          await expect(newMaybe.promise()).resolves.toBe(value);
           expect(onFinally).toBeCalledWith();
         });
       });
@@ -712,7 +717,7 @@ describe('Maybe', () => {
           expect(newMaybe.isReady()).toBe(false);
 
           deferred.reject(error);
-          await expect(newMaybe.promise()).resolves.toBe(finallyValue);
+          await expect(newMaybe.promise()).rejects.toBe(error);
           expect(onFinally).toBeCalledWith();
         });
       });
@@ -742,7 +747,7 @@ describe('Maybe', () => {
         try {
           maybe.suspend();
         } catch (ex) {
-          expect(ex).toBe(promise);
+          expect(ex).toBe(maybe.promise());
         }
       });
     });
@@ -799,7 +804,7 @@ describe('Maybe', () => {
       expect(maybe.value()).toBe(200);
     });
 
-    test('promise that resolves to a maybe', async () => {
+    test('promise that rejects to a maybe', async () => {
       const maybe = Maybe.from(42)
         .when((time) => (
           PromiseUtils.timeout(time)
