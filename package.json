@@ -1,6 +1,6 @@
 {
   "name": "@nextcapital/maybe",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "For things that are 'maybe' a promise!",
   "license": "Apache-2.0",
   "main": "js/index.js",
