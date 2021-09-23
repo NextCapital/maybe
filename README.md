@@ -222,7 +222,7 @@ The `PromiseUtils` object contains a set of nifty helper functions. See the [ful
 - `timeout(time)` - Returns a promise that resolves after the given time
 
 ## AsyncQueue
-The `AsyncQueue` class allows running async tasks against a queue with a maximum concurrency. If the max concurrency is reached, tasks will be queued until capacity is available. See the [full docs](./js/async-queue/AsyncQueue) for more.
+The `AsyncQueue` class allows running async tasks against a queue with a maximum concurrency. If the max concurrency is reached, tasks will be queued until capacity is available. See the [full docs](./js/async-queue/AsyncQueue.js) for more.
 
 The main method here is `perform(task)`, where `task` is a method that returns a promise when called. This will return a promise that resolves/rejects with the same value as the promise returned from `task`.
 
