@@ -1,10 +1,10 @@
 {
   "name": "@nextcapital/maybe",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "For things that are 'maybe' a promise!",
   "license": "Apache-2.0",
   "main": "js/index.js",
-  "types": "./js/index.d.ts",
+  "types": "./types/index.d.ts",
   "files": [
     "js"
   ],
