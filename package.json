@@ -6,7 +6,8 @@
   "main": "js/index.js",
   "types": "./types/index.d.ts",
   "files": [
-    "js"
+    "js",
+    "types"
   ],
   "keywords": [
     "maybe",
