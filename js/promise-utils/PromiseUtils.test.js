@@ -63,9 +63,9 @@ describe('PromiseUtils', () => {
       ];
 
       await PromiseUtils.serialize(tasks);
-      expect(nonPromiseTask).toBeCalled();
-      expect(beforeTask).toBeCalled();
-      expect(afterTask).toBeCalled();
+      expect(nonPromiseTask).toHaveBeenCalled();
+      expect(beforeTask).toHaveBeenCalled();
+      expect(afterTask).toHaveBeenCalled();
     });
 
     test('does not run later tasks if an earlier one rejects', async () => {
@@ -82,9 +82,9 @@ describe('PromiseUtils', () => {
       ];
 
       await expect(PromiseUtils.serialize(tasks)).rejects.toEqual(error);
-      expect(beforeTask).toBeCalled();
-      expect(errorTask).toBeCalled();
-      expect(afterTask).not.toBeCalled();
+      expect(beforeTask).toHaveBeenCalled();
+      expect(errorTask).toHaveBeenCalled();
+      expect(afterTask).not.toHaveBeenCalled();
     });
   });
 

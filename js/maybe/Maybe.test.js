@@ -56,8 +56,8 @@ describe('Maybe', () => {
       test('creates a maybe for the valueGetter', () => {
         const maybe = Maybe.build(isReady, valueGetter, promiseGetter);
         expect(maybe.value()).toBe(value);
-        expect(valueGetter).toBeCalled();
-        expect(promiseGetter).not.toBeCalled();
+        expect(valueGetter).toHaveBeenCalled();
+        expect(promiseGetter).not.toHaveBeenCalled();
       });
     });
 
@@ -69,8 +69,8 @@ describe('Maybe', () => {
       test('creates a maybe for the promiseGetter', () => {
         const maybe = Maybe.build(isReady, valueGetter, promiseGetter);
         expect(maybe.isReady()).toBe(false);
-        expect(promiseGetter).toBeCalled();
-        expect(valueGetter).not.toBeCalled();
+        expect(promiseGetter).toHaveBeenCalled();
+        expect(valueGetter).not.toHaveBeenCalled();
       });
     });
   });
@@ -506,7 +506,7 @@ describe('Maybe', () => {
           const newMaybe = maybe.when(onResolve, onReject);
           expect(newMaybe).not.toBe(maybe);
           expect(newMaybe.value()).toBe(resolvedValue);
-          expect(onResolve).toBeCalledWith(value);
+          expect(onResolve).toHaveBeenCalledWith(value);
         });
 
         describe('when onResolve throws an error', () => {
@@ -516,10 +516,10 @@ describe('Maybe', () => {
 
           test('creates a rejected maybe for the error', () => {
             const newMaybe = maybe.when(onResolve, onReject);
-          expect(newMaybe).not.toBe(maybe);
-          expect(newMaybe.isRejected()).toBe(true);
-          expect(newMaybe.valueOrError()).toBe(error);
-          expect(onResolve).toBeCalledWith(value);
+            expect(newMaybe).not.toBe(maybe);
+            expect(newMaybe.isRejected()).toBe(true);
+            expect(newMaybe.valueOrError()).toBe(error);
+            expect(onResolve).toHaveBeenCalledWith(value);
           });
         });
       });
@@ -541,7 +541,7 @@ describe('Maybe', () => {
           const newMaybe = maybe.when(onResolve, onReject);
           expect(newMaybe).not.toBe(maybe);
           expect(newMaybe.value()).toBe(rejectedValue);
-          expect(onReject).toBeCalledWith(error);
+          expect(onReject).toHaveBeenCalledWith(error);
         });
 
         describe('when onReject throws an error', () => {
@@ -554,7 +554,7 @@ describe('Maybe', () => {
             expect(newMaybe).not.toBe(maybe);
             expect(newMaybe.isRejected()).toBe(true);
             expect(newMaybe.valueOrError()).toBe(error);
-            expect(onReject).toBeCalledWith(error);
+            expect(onReject).toHaveBeenCalledWith(error);
           });
         });
       });
@@ -579,7 +579,7 @@ describe('Maybe', () => {
 
           deferred.resolve(value);
           await expect(newMaybe.promise()).resolves.toBe(resolvedValue);
-          expect(onResolve).toBeCalledWith(value);
+          expect(onResolve).toHaveBeenCalledWith(value);
         });
       });
 
@@ -591,7 +591,7 @@ describe('Maybe', () => {
 
           deferred.reject(error);
           await expect(newMaybe.promise()).resolves.toBe(rejectedValue);
-          expect(onReject).toBeCalledWith(error);
+          expect(onReject).toHaveBeenCalledWith(error);
         });
       });
     });
@@ -624,7 +624,7 @@ describe('Maybe', () => {
         const newMaybe = maybe.catch(onReject);
         expect(newMaybe).not.toBe(maybe);
         expect(newMaybe.value()).toBe(rejectedValue);
-        expect(onReject).toBeCalledWith(error);
+        expect(onReject).toHaveBeenCalledWith(error);
       });
     });
 
@@ -641,7 +641,7 @@ describe('Maybe', () => {
 
           deferred.resolve(value);
           await expect(newMaybe.promise()).resolves.toBe(value);
-          expect(onReject).not.toBeCalled();
+          expect(onReject).not.toHaveBeenCalled();
         });
       });
 
@@ -653,7 +653,7 @@ describe('Maybe', () => {
 
           deferred.reject(error);
           await expect(newMaybe.promise()).resolves.toBe(rejectedValue);
-          expect(onReject).toBeCalledWith(error);
+          expect(onReject).toHaveBeenCalledWith(error);
         });
       });
     });
@@ -676,7 +676,7 @@ describe('Maybe', () => {
         const newMaybe = maybe.finally(onFinally);
         expect(newMaybe).not.toBe(maybe);
         expect(newMaybe.value()).toBe(value);
-        expect(onFinally).toBeCalledWith();
+        expect(onFinally).toHaveBeenCalledWith();
       });
     });
 
@@ -689,7 +689,7 @@ describe('Maybe', () => {
         const newMaybe = maybe.finally(onFinally);
         expect(newMaybe).not.toBe(maybe);
         expect(newMaybe.valueOrError()).toBe(error);
-        expect(onFinally).toBeCalledWith();
+        expect(onFinally).toHaveBeenCalledWith();
       });
     });
 
@@ -706,7 +706,7 @@ describe('Maybe', () => {
 
           deferred.resolve(value);
           await expect(newMaybe.promise()).resolves.toBe(value);
-          expect(onFinally).toBeCalledWith();
+          expect(onFinally).toHaveBeenCalledWith();
         });
       });
 
@@ -718,7 +718,7 @@ describe('Maybe', () => {
 
           deferred.reject(error);
           await expect(newMaybe.promise()).rejects.toBe(error);
-          expect(onFinally).toBeCalledWith();
+          expect(onFinally).toHaveBeenCalledWith();
         });
       });
     });
@@ -784,7 +784,7 @@ describe('Maybe', () => {
 
       expect(maybe.isRejected()).toBe(true);
       expect(maybe.valueOrError()).toBe(error);
-      expect(notCalledFn).not.toBeCalled();
+      expect(notCalledFn).not.toHaveBeenCalled();
 
       await expect(caughtMaybe.promise()).resolves.toBe(value);
       expect(caughtMaybe.value()).toBe(value);
@@ -819,4 +819,3 @@ describe('Maybe', () => {
     });
   });
 });
-
