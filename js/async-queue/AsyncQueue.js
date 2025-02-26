@@ -9,12 +9,12 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
  *
  * @class
  */
- class AsyncQueue {
+class AsyncQueue {
   /**
    * A queue for performing async tasks with a maximum concurrency.
    *
-   * @param {object} [options={}] Constructor options
-   * @param {number} [options.maxConcurrency=1] Max number of async tasks that can run at once
+   * @param {object} [options={}] All constructor options.
+   * @param {number} [options.maxConcurrency=1] Max number of async tasks that can run at once.
    */
   constructor({ maxConcurrency = 1 } = {}) {
     this.maxConcurrency = maxConcurrency;
@@ -24,11 +24,11 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
   }
 
   /**
-   * The length of the queue.
+   * The length of the queue instance.
    *
    * @type {number}
    */
-   get length() {
+  get length() {
     return this.queue.length;
   }
 
@@ -37,7 +37,7 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
    * when a running task completes.
    *
    * @param {Function} task Function returning a promise. Should not do anything until invoked.
-   * @returns {Promise} Promise that resolves or rejects with the task result
+   * @returns {Promise} Promise that resolves or rejects with the task result.
    */
   perform(task) {
     const result = PromiseUtils.defer();
@@ -58,8 +58,8 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
   /**
    * Actually runs a given task.
    *
-   * @param {Deferred} result Output from `PromiseUtils.defer`
-   * @param {Function} task The task to perform
+   * @param {Deferred} result Output from `PromiseUtils.defer`.
+   * @param {Function} task The task to perform.
    * @returns {Promise}
    * @private
    */

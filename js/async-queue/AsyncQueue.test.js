@@ -43,9 +43,9 @@ describe('AsyncQueue', () => {
 
       test('defers to _performTask and returns a promise', () => {
         const result = asyncQueue.perform(task);
-        expect(asyncQueue._performTask).toBeCalledWith(expect.anything(), task);
+        expect(asyncQueue._performTask).toHaveBeenCalledWith(expect.anything(), task);
         expect(PromiseUtils.isThenable(result)).toBe(true);
-        expect(task).not.toBeCalled();
+        expect(task).not.toHaveBeenCalled();
       });
 
       test('increases numRunningTasks by one', () => {
@@ -68,7 +68,7 @@ describe('AsyncQueue', () => {
         asyncQueue.perform(task);
         const queueTask = asyncQueue.queue[0];
         queueTask();
-        expect(asyncQueue._performTask).toBeCalledWith(expect.anything(), task);
+        expect(asyncQueue._performTask).toHaveBeenCalledWith(expect.anything(), task);
       });
 
       test('does not modify numRunningTasks', () => {
@@ -78,9 +78,9 @@ describe('AsyncQueue', () => {
 
       test('does not call _performTask, but returns a promise', () => {
         const result = asyncQueue.perform(task);
-        expect(asyncQueue._performTask).not.toBeCalled();
+        expect(asyncQueue._performTask).not.toHaveBeenCalled();
         expect(PromiseUtils.isThenable(result)).toBe(true);
-        expect(task).not.toBeCalled();
+        expect(task).not.toHaveBeenCalled();
       });
     });
   });
@@ -102,7 +102,7 @@ describe('AsyncQueue', () => {
 
     test('runs the task', () => {
       asyncQueue._performTask(result, task);
-      expect(task).toBeCalled();
+      expect(task).toHaveBeenCalled();
     });
 
     function testHandlesQueue(perform) {
@@ -149,8 +149,8 @@ describe('AsyncQueue', () => {
           perform();
           await asyncQueue._performTask(result, task);
 
-          expect(firstTask).toBeCalled();
-          asyncQueue.queue.forEach((otherTask) => expect(otherTask).not.toBeCalled());
+          expect(firstTask).toHaveBeenCalled();
+          asyncQueue.queue.forEach((otherTask) => expect(otherTask).not.toHaveBeenCalled());
         });
 
         test('does not modify numRunningTasks', async () => {
@@ -168,7 +168,7 @@ describe('AsyncQueue', () => {
         taskRequest.resolve(resolveValue);
 
         await asyncQueue._performTask(result, task);
-        expect(result.resolve).toBeCalledWith(resolveValue);
+        expect(result.resolve).toHaveBeenCalledWith(resolveValue);
       });
 
       testHandlesQueue(() => taskRequest.resolve('value'));

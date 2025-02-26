@@ -15,7 +15,7 @@ class Maybe {
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
    *
-   * @param {*} thing A promise, maybe, or some other value to convert into a Maybe
+   * @param {*} thing A promise, maybe, or some other value to convert into a Maybe.
    * @returns {Maybe}
    */
   static from(thing) {
@@ -31,9 +31,9 @@ class Maybe {
    * `Maybe` will be created from the resulting value. Otherwise, `promiseGetter` will be called
    * and a `Maybe` will be created from the resulting Promise.
    *
-   * @param {Boolean} isReady Boolean indicating if the value is ready or not
-   * @param {Function} valueGetter Function returning the value if `isReady` is true
-   * @param {Function} promiseGetter Function returning a promise for the value otherwise
+   * @param {boolean} isReady Boolean indicating if the value is ready or not.
+   * @param {Function} valueGetter Function returning the value if `isReady` is true.
+   * @param {Function} promiseGetter Function returning a promise for the value otherwise.
    * @returns {Maybe}
    */
   static build(isReady, valueGetter, promiseGetter) {
@@ -48,7 +48,7 @@ class Maybe {
    * Returns `true` if `thing` is a `Maybe` instance.
    *
    * @param {*} thing
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   static isMaybe(thing) {
     return thing instanceof Maybe;
@@ -57,7 +57,7 @@ class Maybe {
   /**
    * Creates a rejected Maybe instance for the error.
    *
-   * @param {*} error The error for the rejected Maybe
+   * @param {*} error The error for the rejected Maybe.
    * @returns {Maybe}
    */
   static fromError(error) {
@@ -96,7 +96,7 @@ class Maybe {
    * Builds a new `Maybe` instance.
    *
    * @param {*} thing A promise, another maybe, or some value.
-   * @param {Boolean} [isError=false] When `true`, and if the the `thing` is not a promise or
+   * @param {boolean} [isError=false] When `true`, and if the the `thing` is not a promise or
    *   Maybe, the instance will reject to `thing` instead of resolving.
    */
   constructor(thing, isError = false) {
@@ -131,7 +131,7 @@ class Maybe {
    * Returns `true` if the instance is resolved or rejected. If the promise is still pending,
    * this will return `false`.
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isReady() {
     return this._isReady;
@@ -140,7 +140,7 @@ class Maybe {
   /**
    * Returns `true` if the instance is not yet resolved or rejected. The opposite of `isReady`.
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isPending() {
     return !this._isReady;
@@ -150,7 +150,7 @@ class Maybe {
    * Returns `true` if the instance is resolved. A call to `value()` will return the resolved
    * value synchronously.
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isResolved() {
     return this._isReady && !this._isError;
@@ -160,7 +160,7 @@ class Maybe {
    * Returns `true` if the instance is rejected. A call to `value()` will throw the rejected
    * error value.
    *
-   * @returns {Boolean}
+   * @returns {boolean}
    */
   isRejected() {
     return this._isReady && this._isError;
@@ -314,7 +314,7 @@ class Maybe {
    *
    * - We'll return a value if there is one
    * - We'll throw a non-promise error if there is one
-   * - We'll throw the promise if we are still pending
+   * - We'll throw the promise if we are still pending.
    *
    * This is intended for use with React suspense with data fetch.
    *
@@ -329,6 +329,7 @@ class Maybe {
     throw this.promise();
   }
 
+  // eslint-disable-next-line jsdoc/require-returns-check
   /**
    * Makes this Maybe adopt the state of another Maybe instance. If the other maybe is
    * not yet ready, we'll register a `when` in order to adopt its eventual state.
@@ -337,6 +338,7 @@ class Maybe {
    * @param {boolean} fromPromise When `true`, this will return a promise. This is useful
    *   when `_become` is called as part of a `then` chain. If called from the constructor,
    *   we don't want to call `promise` to avoid an unhandled rejection error.
+   * @returns {Promise}
    * @private
    */
   _become(otherMaybe, fromPromise) {
@@ -371,7 +373,7 @@ class Maybe {
    * This will re-resolve the value to preserve promise chaining.
    *
    * @param {*} value
-   * @returns {*} the value or a promise for the value
+   * @returns {*} The value or a promise for the value.
    * @private
    */
   _handleResolve(value) {
@@ -393,7 +395,7 @@ class Maybe {
    * This will re-reject the value to preserve promise chaining.
    *
    * @param {*} error
-   * @returns {Promise} a promise rejected to the error
+   * @returns {Promise} A promise rejected to the error.
    * @private
    */
   _handleReject(error) {

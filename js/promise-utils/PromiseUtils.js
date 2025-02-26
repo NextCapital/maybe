@@ -1,7 +1,7 @@
 /**
  * A helpful set of utilities for working with native promises.
  *
- * @type {Object}
+ * @type {object}
  */
 const PromiseUtils = {
   /**
@@ -10,7 +10,7 @@ const PromiseUtils = {
    *
    * - promise (Promise): The promise that can be resolved/rejected
    * - resolve (Function): When called, will resolve the promise with the value
-   * - reject (Function): When called, will reject the promise with the error
+   * - reject (Function): When called, will reject the promise with the error.
    *
    * @returns {object}
    */
@@ -33,7 +33,7 @@ const PromiseUtils = {
    * Unlike a normal AsyncQueue, if a task fails, the rest of the tasks will not run. In addition,
    * this method will resolve with the resolved values of each task.
    *
-   * @param {Function[]} tasks Functions that, when called, return a promise or value
+   * @param {Function[]} tasks Functions that, when called, return a promise or value.
    * @returns {Promise<Array>}
    */
   serialize(tasks) {
@@ -91,8 +91,8 @@ const PromiseUtils = {
    *
    * This method returns `true` if the `thing` passed in is "thenable".
    *
-   * @param {*} thing The thing to check
-   * @returns {Boolean}
+   * @param {*} thing The thing to check.
+   * @returns {boolean}
    */
   isThenable(thing) {
     return Boolean(
@@ -106,11 +106,13 @@ const PromiseUtils = {
   /**
    * Returns a promise that resolves after the given time has passed.
    *
-   * @param {number} time Time in milliseconds for the timeout
+   * @param {number} time Time in milliseconds for the timeout.
    * @returns {Promise}
    */
   timeout(time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
+    return new Promise((resolve) => {
+      setTimeout(resolve, time);
+    });
   }
 };
 
