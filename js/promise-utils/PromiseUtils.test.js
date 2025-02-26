@@ -6,7 +6,8 @@ describe('PromiseUtils', () => {
   });
 
   afterEach(() => {
-    jest.clearAllTimers();
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
   });
 
   describe('defer', () => {
