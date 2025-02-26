@@ -14,8 +14,8 @@
     "suspense"
   ],
   "engines": {
-    "node": ">=12.13.1",
-    "npm": ">=6.13.0"
+    "node": ">= 18",
+    "npm": ">= 9"
   },
   "repository": {
     "type": "git",
@@ -40,10 +40,12 @@
     "test": "jest"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/eslint-parser": "^7.26.8",
+    "@nextcapital/eslint-config": "^0.1.6",
     "cspell": "^6.8.1",
-    "eslint": "^8.23.0",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-plugin-import": "^2.26.0",
+    "eslint": "^9.21.0",
+    "eslint-plugin-import": "^2.31.0",
     "jest": "^29.0.2",
     "jest-junit-reporter": "^1.1.0",
     "license-checker-rseidelsohn": "^3.1.0"
