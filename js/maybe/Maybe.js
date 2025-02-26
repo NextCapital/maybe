@@ -329,6 +329,7 @@ class Maybe {
     throw this.promise();
   }
 
+  // eslint-disable-next-line jsdoc/require-returns-check
   /**
    * Makes this Maybe adopt the state of another Maybe instance. If the other maybe is
    * not yet ready, we'll register a `when` in order to adopt its eventual state.
@@ -337,6 +338,7 @@ class Maybe {
    * @param {boolean} fromPromise When `true`, this will return a promise. This is useful
    *   when `_become` is called as part of a `then` chain. If called from the constructor,
    *   we don't want to call `promise` to avoid an unhandled rejection error.
+   * @returns {Promise}
    * @private
    */
   _become(otherMaybe, fromPromise) {

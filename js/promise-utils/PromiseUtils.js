@@ -110,7 +110,9 @@ const PromiseUtils = {
    * @returns {Promise}
    */
   timeout(time) {
-    return new Promise((resolve) => setTimeout(resolve, time));
+    return new Promise((resolve) => {
+      setTimeout(resolve, time);
+    });
   }
 };
 

@@ -13,7 +13,7 @@ class AsyncQueue {
   /**
    * A queue for performing async tasks with a maximum concurrency.
    *
-   * @param {object} [options={}] Constructor options.
+   * @param {object} [options={}] All constructor options.
    * @param {number} [options.maxConcurrency=1] Max number of async tasks that can run at once.
    */
   constructor({ maxConcurrency = 1 } = {}) {
@@ -24,7 +24,7 @@ class AsyncQueue {
   }
 
   /**
-   * The length of the queue.
+   * The length of the queue instance.
    *
    * @type {number}
    */

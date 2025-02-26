@@ -3,7 +3,7 @@ const PendingValueError = require('./PendingValueError');
 const Maybe = require('./Maybe');
 
 process.on('unhandledRejection', (error) => {
-  fail(error); // eslint-disable-line no-undef
+  fail(error); // eslint-disable-line no-undef,jest/no-jasmine-globals
 });
 
 describe('Maybe', () => {
@@ -747,6 +747,7 @@ describe('Maybe', () => {
         try {
           maybe.suspend();
         } catch (ex) {
+          // eslint-disable-next-line jest/no-conditional-expect
           expect(ex).toBe(maybe.promise());
         }
       });
@@ -756,9 +757,9 @@ describe('Maybe', () => {
   describe('chaining', () => {
     test('chains correctly when resolving', async () => {
       const maybe = Maybe.from(10)
-        .when((value) => value * 2) // 20
-        .when((value) => promise.then((otherValue) => otherValue + value)) // 30
-        .when((value) => Maybe.from(Promise.resolve(value * 2))); // 60
+        .when((v) => v * 2) // 20
+        .when((v) => promise.then((otherValue) => otherValue + v)) // 30
+        .when((v) => Maybe.from(Promise.resolve(v * 2))); // 60
 
       expect(maybe.isReady()).toBe(false);
 
@@ -772,8 +773,8 @@ describe('Maybe', () => {
     test('chain correctly when there is a rejection', async () => {
       const notCalledFn = jest.fn();
       const maybe = Maybe.from(10)
-        .when((value) => value * 2) // 20
-        .when((value) => promise.then((otherValue) => otherValue + value)) // 30
+        .when((v) => v * 2) // 20
+        .when((v) => promise.then((otherValue) => otherValue + v)) // 30
         .when(notCalledFn);
 
       expect(maybe.isReady()).toBe(false);
@@ -795,9 +796,9 @@ describe('Maybe', () => {
         .when((time) => (
           PromiseUtils.timeout(time)
             .then(() => Maybe.from(PromiseUtils.timeout(2).then(() => 100)))
-        )).when((value) => {
-          expect(value).toBe(100);
-          return value * 2;
+        )).when((v) => {
+          expect(v).toBe(100);
+          return v * 2;
         });
 
       expect(await maybe.promise()).toBe(200);
@@ -809,9 +810,9 @@ describe('Maybe', () => {
         .when((time) => (
           PromiseUtils.timeout(time)
             .then(() => Promise.reject(Maybe.from(PromiseUtils.timeout(2).then(() => 100))))
-        )).when((value) => {
-          expect(value).toBe(100);
-          return value * 2;
+        )).when((v) => {
+          expect(v).toBe(100);
+          return v * 2;
         });
 
       expect(await maybe.promise()).toBe(200);
