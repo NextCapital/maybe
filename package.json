@@ -1,6 +1,6 @@
 {
   "name": "@nextcapital/maybe",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "For things that are 'maybe' a promise!",
   "license": "Apache-2.0",
   "main": "js/index.js",
@@ -40,14 +40,14 @@
     "test": "jest"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.9",
-    "@babel/eslint-parser": "^7.26.8",
+    "@babel/core": "^7.26.10",
+    "@babel/eslint-parser": "^7.27.0",
     "@nextcapital/eslint-config": "^0.1.6",
-    "cspell": "^6.8.1",
-    "eslint": "^9.21.0",
+    "cspell": "^8.19.2",
+    "eslint": "^9.25.1",
     "eslint-plugin-import": "^2.31.0",
     "jest": "^29.7.0",
     "jest-junit-reporter": "^1.1.0",
-    "license-checker-rseidelsohn": "^3.1.0"
+    "license-checker-rseidelsohn": "^4.4.2"
   }
 }
