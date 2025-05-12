@@ -2,6 +2,7 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: [
     "js/**/*.js",
+    "js/**/*.ts",
     '!js/index.js'
   ],
   coverageThreshold: {
@@ -14,15 +15,20 @@ module.exports = {
   },
   moduleFileExtensions: [
     'js',
-    'json'
+    'json',
+    'ts'
   ],
   moduleDirectories: [
     'node_modules',
     'js'
   ],
+  restoreMocks: true,
   testMatch: [
-    "<rootDir>/js/**/*.test.js"
+    "<rootDir>/js/**/*.test.js",
+    "<rootDir>/js/**/*.test.ts"
   ],
   testResultsProcessor: "./node_modules/jest-junit-reporter",
-  restoreMocks: true,
+  transform: {
+    '^.+\.tsx?$': ['ts-jest',{}]
+  }
 };
