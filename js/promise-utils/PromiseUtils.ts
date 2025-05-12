@@ -11,10 +11,12 @@ const PromiseUtils = {
    * - promise (Promise): The promise that can be resolved/rejected
    * - resolve (Function): When called, will resolve the promise with the value
    * - reject (Function): When called, will reject the promise with the error.
-   *
-   * @returns {object}
    */
-  defer() {
+  defer(): {
+    promise: Promise<any>;
+    resolve: Function | undefined; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+    reject: Function | undefined; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+  } {
     let resolve, reject;
     const promise = new Promise((_resolve, _reject) => {
       resolve = _resolve;
@@ -32,18 +34,15 @@ const PromiseUtils = {
    * Runs a series of tasks in-order, with the next not starting until the previous completes.
    * Unlike a normal AsyncQueue, if a task fails, the rest of the tasks will not run. In addition,
    * this method will resolve with the resolved values of each task.
-   *
-   * @param {Function[]} tasks Functions that, when called, return a promise or value.
-   * @returns {Promise<Array>}
    */
-  serialize(tasks) {
+  serialize(tasks: (() => any)[]): Promise<any[]> {
     return tasks.reduce(
       (result, task) => result.then((value) => (
         Promise.resolve(task()).then(
           (taskResult) => value.concat([taskResult])
         )
       )),
-      Promise.resolve([])
+      Promise.resolve([] as any[])
     );
   },
 
@@ -58,15 +57,15 @@ const PromiseUtils = {
    * @returns {Promise} A Promise to be resolved once `condition` is `true` or to reject if
    *   `timeout` is reached.
    */
-  pollForCondition(condition, timeout = null) {
+  pollForCondition(condition: () => boolean, timeout: number | null = null): Promise<void> {
     return new Promise((resolve, reject) => {
-      let cancelPollReference = null;
+      let cancelPollReference: NodeJS.Timeout | undefined;
       const handleTimeout = () => {
         clearTimeout(cancelPollReference);
         reject(new Error('Timeout reached in PromiseUtils.pollForCondition'));
       };
 
-      const cancelTimeout = timeout ? setTimeout(handleTimeout, timeout) : null;
+      const cancelTimeout = timeout ? setTimeout(handleTimeout, timeout) : undefined;
 
       const evaluateCondition = () => {
         if (condition()) {
@@ -90,11 +89,8 @@ const PromiseUtils = {
    * ("thenable") something that acts a promise.
    *
    * This method returns `true` if the `thing` passed in is "thenable".
-   *
-   * @param {*} thing The thing to check.
-   * @returns {boolean}
    */
-  isThenable(thing) {
+  isThenable(thing: any): boolean {
     return Boolean(
       thing &&
       thing !== null &&
@@ -109,11 +105,11 @@ const PromiseUtils = {
    * @param {number} time Time in milliseconds for the timeout.
    * @returns {Promise}
    */
-  timeout(time) {
+  timeout(time: number): Promise<NodeJS.Timeout> {
     return new Promise((resolve) => {
       setTimeout(resolve, time);
     });
   }
 };
 
-module.exports = PromiseUtils;
+export default PromiseUtils;

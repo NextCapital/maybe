@@ -26,7 +26,10 @@ module.exports = [
     rules: {
       '@stylistic/jsx-props-no-multi-spaces': 'off',
 
+      '@typescript-eslint/no-explicit-any': 'off',
+
       'class-methods-use-this': 'off',
+      'no-undef': 'off',
 
       'jsdoc/require-param': 'off',
       'jsdoc/require-returns': 'off',

@@ -36,7 +36,7 @@
     "license:production": "license-checker-rseidelsohn --summary --production --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
     "lint": "npm run lint:js && npm run lint:ts && npm run lint:spelling",
     "lint:js": "eslint \"js/**/*.{js,jsx}\" --cache",
-    "lint:ts": "eslint \"js/**/*.{ts,tsx}\" --cache",
+    "lint:ts": "eslint \"js/**/*.{ts,tsx}\" --config=eslint-ts.config.cjs --cache --cache-location=.eslintcache-ts",
     "lint:spelling": "cspell \"js/**/*.{js,jsx,ts,tsx}\" --cache --no-progress",
     "test": "jest",
     "tsc": "tsc"
