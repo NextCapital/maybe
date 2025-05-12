@@ -14,8 +14,8 @@ const PromiseUtils = {
    */
   defer(): {
     promise: Promise<any>;
-    resolve: Function | undefined; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
-    reject: Function | undefined; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+    resolve: Function; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
+    reject: Function; // eslint-disable-line @typescript-eslint/no-unsafe-function-type
   } {
     let resolve, reject;
     const promise = new Promise((_resolve, _reject) => {
@@ -25,8 +25,8 @@ const PromiseUtils = {
 
     return {
       promise,
-      resolve,
-      reject
+      resolve: resolve as unknown as Function,
+      reject: reject as unknown as Function
     };
   },
 
@@ -60,6 +60,7 @@ const PromiseUtils = {
   pollForCondition(condition: () => boolean, timeout: number | null = null): Promise<void> {
     return new Promise((resolve, reject) => {
       let cancelPollReference: NodeJS.Timeout | undefined;
+
       const handleTimeout = () => {
         clearTimeout(cancelPollReference);
         reject(new Error('Timeout reached in PromiseUtils.pollForCondition'));

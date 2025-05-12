@@ -1,4 +1,4 @@
-const PromiseUtils = require('../promise-utils/PromiseUtils');
+import PromiseUtils from '../promise-utils/PromiseUtils';
 
 /**
  * A queue for performing async tasks with a set amount of tasks allowed to run at once.
@@ -10,13 +10,23 @@ const PromiseUtils = require('../promise-utils/PromiseUtils');
  * @class
  */
 class AsyncQueue {
+  maxConcurrency: number;
+
+  queue: (() => any)[];
+
+  numRunningTasks: number;
+
   /**
    * A queue for performing async tasks with a maximum concurrency.
    *
    * @param {object} [options={}] All constructor options.
    * @param {number} [options.maxConcurrency=1] Max number of async tasks that can run at once.
    */
-  constructor({ maxConcurrency = 1 } = {}) {
+  constructor({
+    maxConcurrency = 1
+  } : {
+    maxConcurrency?: number
+  } = {}) {
     this.maxConcurrency = maxConcurrency;
     this.queue = [];
 
@@ -28,7 +38,7 @@ class AsyncQueue {
    *
    * @type {number}
    */
-  get length() {
+  get length() : number {
     return this.queue.length;
   }
 
@@ -39,7 +49,7 @@ class AsyncQueue {
    * @param {Function} task Function returning a promise. Should not do anything until invoked.
    * @returns {Promise} Promise that resolves or rejects with the task result.
    */
-  perform(task) {
+  perform(task: () => any): Promise<any> {
     const result = PromiseUtils.defer();
 
     if (this.numRunningTasks < this.maxConcurrency) {
@@ -58,12 +68,22 @@ class AsyncQueue {
   /**
    * Actually runs a given task.
    *
-   * @param {Deferred} result Output from `PromiseUtils.defer`.
+   * @param {object} result Output from `PromiseUtils.defer`.
+   * @param {Promise} result.promise
+   * @param {Function} result.resolve
+   * @param {Function} result.reject
    * @param {Function} task The task to perform.
    * @returns {Promise}
    * @private
    */
-  _performTask(result, task) {
+  private _performTask(
+    result: {
+      promise: Promise<any>,
+      resolve: Function,
+      reject: Function
+    },
+    task: () => any
+  ) {
     return Promise.resolve(task()).then((value) => {
       result.resolve(value);
     }).catch((ex) => {
@@ -72,7 +92,9 @@ class AsyncQueue {
       // now that we are complete, a task from the queue can run
       if (this.queue.length) {
         const newTask = this.queue.shift();
-        newTask();
+        if (newTask) {
+          newTask();
+        }
       } else {
         this.numRunningTasks -= 1;
       }
@@ -80,4 +102,4 @@ class AsyncQueue {
   }
 }
 
-module.exports = AsyncQueue;
+export default AsyncQueue;
