@@ -40,6 +40,7 @@ jobs:
       id: node-modules-cache
       with:
         path: '**/node_modules'
+        fail-on-cache-miss: true
         key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}-${{ matrix.node-version }}
 
     - run: npm run lint
@@ -60,6 +61,7 @@ jobs:
       id: node-modules-cache
       with:
         path: '**/node_modules'
+        fail-on-cache-miss: true
         key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}-${{ matrix.node-version }}
 
     - run: npm run test
@@ -80,6 +82,7 @@ jobs:
       id: node-modules-cache
       with:
         path: '**/node_modules'
+        fail-on-cache-miss: true
         key: ${{ runner.os }}-modules-${{ hashFiles('package-lock.json') }}-${{ matrix.node-version }}
 
     - run: npm run license
