@@ -6,3 +6,6 @@ node_modules/
 test-report.xml
 .cspellcache
 .eslintcache
+TODO.md
+PROMPT.md
+PROMPTS.md
