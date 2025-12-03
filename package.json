@@ -4,7 +4,6 @@
   "description": "For things that are 'maybe' a promise!",
   "license": "Apache-2.0",
   "main": "dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -29,33 +28,28 @@
   },
   "homepage": "https://github.com/nextcapital/maybe#readme",
   "scripts": {
-    "build": "npm run clean && tsc",
-    "clean": "rm -rf dist ts-output",
-    "prepublishOnly": "npm run build",
-    "ci:local": "npm run lint && npm run test && npm run license",
-    "license": "npm run license:production && npm run license:development",
-    "tsc": "tsc",
-    "license:development": "license-checker-rseidelsohn --summary --development --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
-    "license:production": "license-checker-rseidelsohn --summary --production --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
+    "clean": "rm -rf dist",
+    "ci:local": "npm run lint && npm run test && npm run tsc && npm run tsc:test",
     "lint": "npm run lint:js && npm run lint:spelling",
-    "lint:js": "eslint \"js/**/*.{js,jsx,ts}\" --cache",
-    "lint:spelling": "cspell \"js/**/*.{js,jsx,ts}\" --cache --no-progress",
-    "test": "jest"
+    "lint:js": "eslint \"js/**/*.ts\" --cache",
+    "lint:spelling": "cspell \"js/**/*.ts\" --cache --no-progress",
+    "test": "jest",
+    "tsc": "tsc",
+    "tsc:test": "tsc --project tsconfig.test.json"
   },
   "devDependencies": {
     "@babel/core": "^7.26.10",
     "@babel/eslint-parser": "^7.27.0",
     "@nextcapital/eslint-config": "^0.1.6",
+    "@nextcapital/eslint-config-typescript": "^0.1.8",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
     "cspell": "^8.19.2",
     "eslint": "^9.25.1",
     "eslint-plugin-import": "^2.31.0",
     "jest": "^29.7.0",
     "jest-junit-reporter": "^1.1.0",
-    "license-checker-rseidelsohn": "^4.4.2",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   }

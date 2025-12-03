@@ -29,7 +29,7 @@ describe('AsyncQueue', () => {
   });
 
   describe('perform', () => {
-    let task: jest.Mock<Promise<void>, []>;
+    let task: jest.Mock<Promise<void>>;
 
     beforeEach(() => {
       jest.spyOn(asyncQueue, '_performTask').mockImplementation();
@@ -105,10 +105,6 @@ describe('AsyncQueue', () => {
       expect(task).toHaveBeenCalled();
     });
 
-    /**
-     *
-     * @param perform
-     */
     function testHandlesQueue(perform) {
       describe('when the queue is empty', () => {
         beforeEach(() => {

@@ -1,23 +1,19 @@
-const babelParser = require('@babel/eslint-parser');
-const typescriptParser = require('@typescript-eslint/parser');
-const typescriptPlugin = require('@typescript-eslint/eslint-plugin');
+const baseTSConfig = require('@nextcapital/eslint-config-typescript');
+const jestTSConfig = require('@nextcapital/eslint-config-typescript/jest');
+const jsdocTSConfig = require('@nextcapital/eslint-config-typescript/jsdoc');
 
-const baseConfig = require('@nextcapital/eslint-config');
-const jestConfig = require('@nextcapital/eslint-config/jest');
-const jsdocConfig = require('@nextcapital/eslint-config/jsdoc');
+const tsParser = require('@typescript-eslint/parser');
 
 module.exports = [
-  ...baseConfig,
-  ...jestConfig,
-  ...jsdocConfig,
+  ...baseTSConfig,
+  ...jestTSConfig,
+  ...jsdocTSConfig,
   {
-    files: ['**/*.js', '**/*.cjs', '**/*.mjs'],
     languageOptions: {
-      parser: babelParser,
+      parser: tsParser,
       parserOptions: {
         ecmaVersion: 2016,
-        sourceType: 'module',
-        requireConfigFile: false
+        sourceType: 'module'
       }
     },
     settings: {
@@ -27,39 +23,29 @@ module.exports = [
     }
   },
   {
-    files: ['**/*.ts'],
-    languageOptions: {
-      parser: typescriptParser,
-      parserOptions: {
-        ecmaVersion: 2020,
-        sourceType: 'module',
-        project: ['./tsconfig.json', './tsconfig.test.json']
-      }
-    },
-    plugins: {
-      '@typescript-eslint': typescriptPlugin
-    },
     rules: {
-      ...typescriptPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { 
-        argsIgnorePattern: '^_',
-        varsIgnorePattern: '^_'
-      }]
-    },
-    settings: {
-      jest: {
-        version: 29
-      }
-    }
-  },
-  {
-    rules: {
-      'import/extensions': 'off',
+      '@stylistic/jsx-props-no-multi-spaces': 'off',
+
+      'class-methods-use-this': 'off',
+
+      'import/extensions': ['error', 'ignorePackages', {
+        'ts': 'never'
+      }],
+
+      'jsdoc/require-param': 'off',
+      'jsdoc/require-returns': 'off',
+
       'jsdoc/require-param-description': 'off',
       'jsdoc/require-returns-description': 'off',
-      'jsdoc/require-param-type': 'off',
-      'jsdoc/require-returns-type': 'off'
+      'jsdoc/valid-types': 'off',
+
+      'no-template-curly-in-string': 'off'
+    }
+  },
+  {
+    files: ['js/**/*.test.ts'],
+    rules: {
+      'jsdoc/require-jsdoc': 'off'
     }
   }
 ];

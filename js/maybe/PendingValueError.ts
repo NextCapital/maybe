@@ -5,6 +5,5 @@ export default class PendingValueError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'PendingValueError';
-    Object.setPrototypeOf(this, PendingValueError.prototype);
   }
 }

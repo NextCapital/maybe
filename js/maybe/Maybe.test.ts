@@ -45,8 +45,8 @@ describe('Maybe', () => {
 
   describe('static build', () => {
     let isReady: boolean;
-    let valueGetter: jest.Mock<number, []>;
-    let promiseGetter: jest.Mock<Promise<number>, []>;
+    let valueGetter: jest.Mock<number>;
+    let promiseGetter: jest.Mock<Promise<number>>;
 
     beforeEach(() => {
       valueGetter = jest.fn().mockReturnValue(value);
@@ -670,7 +670,7 @@ describe('Maybe', () => {
   });
 
   describe('finally', () => {
-    let onFinally: jest.Mock<string, []>;
+    let onFinally: jest.Mock<string>;
     let finallyValue: string;
     let maybe: Maybe<number>;
 
