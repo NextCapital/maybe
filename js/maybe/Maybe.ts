@@ -1,5 +1,5 @@
-const PromiseUtils = require('../promise-utils/PromiseUtils');
-const PendingValueError = require('./PendingValueError');
+import PromiseUtils from '../promise-utils/PromiseUtils.js';
+import PendingValueError from './PendingValueError.js';
 
 /**
  * The `Maybe` class acts like a `Maybe` type in functional programming: but instead of being
@@ -10,15 +10,17 @@ const PendingValueError = require('./PendingValueError');
  * error synchronously. The `Maybe` class allows you to do to both. This allows us to act
  * synchronously on data if possible, and wait for it easily if not.
  */
-class Maybe {
+export default class Maybe<T> {
+  private _isReady: boolean;
+  private _isError: boolean;
+  private _value: T | undefined;
+  private _wrappedPromise: Promise<T> | null;
+
   /**
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
-   *
-   * @param {*} thing A promise, maybe, or some other value to convert into a Maybe.
-   * @returns {Maybe}
    */
-  static from(thing) {
+  static from<T>(thing: T | Promise<T> | Maybe<T>): Maybe<T> {
     if (this.isMaybe(thing)) {
       return thing;
     }
@@ -30,13 +32,8 @@ class Maybe {
    * Helpful builder for a Maybe. If `isReady` is true, the `valueGetter` will be called and a
    * `Maybe` will be created from the resulting value. Otherwise, `promiseGetter` will be called
    * and a `Maybe` will be created from the resulting Promise.
-   *
-   * @param {boolean} isReady Boolean indicating if the value is ready or not.
-   * @param {Function} valueGetter Function returning the value if `isReady` is true.
-   * @param {Function} promiseGetter Function returning a promise for the value otherwise.
-   * @returns {Maybe}
    */
-  static build(isReady, valueGetter, promiseGetter) {
+  static build<T>(isReady: boolean, valueGetter: () => T, promiseGetter: () => Promise<T>): Maybe<T> {
     if (isReady) {
       return new Maybe(valueGetter());
     }
@@ -46,21 +43,15 @@ class Maybe {
 
   /**
    * Returns `true` if `thing` is a `Maybe` instance.
-   *
-   * @param {*} thing
-   * @returns {boolean}
    */
-  static isMaybe(thing) {
+  static isMaybe(thing: unknown): thing is Maybe<unknown> {
     return thing instanceof Maybe;
   }
 
   /**
    * Creates a rejected Maybe instance for the error.
-   *
-   * @param {*} error The error for the rejected Maybe.
-   * @returns {Maybe}
    */
-  static fromError(error) {
+  static fromError(error: Error): Maybe<never> {
     return new Maybe(error, true);
   }
 
@@ -72,11 +63,8 @@ class Maybe {
    * - If any entry has rejected, will return a Maybe rejected to the first rejected value.
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
    *   for the `promise()` for each input Maybe.
-   *
-   * @param {Array} array Values to check. All of these will be passed through `Maybe.from`.
-   * @returns {Maybe}
    */
-  static all(array) {
+  static all<T>(array: Array<T | Promise<T> | Maybe<T>>): Maybe<T[]> {
     const maybeArray = array.map((thing) => Maybe.from(thing));
     const allResolved = maybeArray.every((maybe) => maybe.isResolved());
 
@@ -86,7 +74,7 @@ class Maybe {
 
     const rejectedEntry = maybeArray.find((maybe) => maybe.isRejected());
     if (rejectedEntry) {
-      return rejectedEntry;
+      return rejectedEntry as Maybe<T[]>;
     }
 
     return Maybe.from(Promise.all(maybeArray.map((maybe) => maybe.promise())));
@@ -94,12 +82,8 @@ class Maybe {
 
   /**
    * Builds a new `Maybe` instance.
-   *
-   * @param {*} thing A promise, another maybe, or some value.
-   * @param {boolean} [isError=false] When `true`, and if the the `thing` is not a promise or
-   *   Maybe, the instance will reject to `thing` instead of resolving.
    */
-  constructor(thing, isError = false) {
+  constructor(thing: T | Promise<T> | Maybe<T>, isError = false) {
     const isMaybe = Maybe.isMaybe(thing);
     const isPromise = PromiseUtils.isThenable(thing);
 
@@ -113,7 +97,7 @@ class Maybe {
     }
 
     if (isPromise) {
-      this._wrappedPromise = thing.then(
+      this._wrappedPromise = (thing as Promise<T>).then(
         (value) => this._handleResolve(value),
         (error) => this._handleReject(error)
       );
@@ -123,62 +107,51 @@ class Maybe {
     }
 
     if (isMaybe) {
-      this._become(thing, false);
+      this._become(thing as Maybe<T>, false);
     }
   }
 
   /**
    * Returns `true` if the instance is resolved or rejected. If the promise is still pending,
    * this will return `false`.
-   *
-   * @returns {boolean}
    */
-  isReady() {
+  isReady(): boolean {
     return this._isReady;
   }
 
   /**
    * Returns `true` if the instance is not yet resolved or rejected. The opposite of `isReady`.
-   *
-   * @returns {boolean}
    */
-  isPending() {
+  isPending(): boolean {
     return !this._isReady;
   }
 
   /**
    * Returns `true` if the instance is resolved. A call to `value()` will return the resolved
    * value synchronously.
-   *
-   * @returns {boolean}
    */
-  isResolved() {
+  isResolved(): boolean {
     return this._isReady && !this._isError;
   }
 
   /**
    * Returns `true` if the instance is rejected. A call to `value()` will throw the rejected
    * error value.
-   *
-   * @returns {boolean}
    */
-  isRejected() {
+  isRejected(): boolean {
     return this._isReady && this._isError;
   }
 
   /**
-   * If resolved, this will return the resolved value. If rejected, this will return the rejected
+   * If resolved, this will return the resolved value. If rejected, this will throw the rejected
    * error.
    *
    * Otherwise, this will throw a `PendingValueError`. Always be sure to gate code by `isReady`,
    * `isResolved`, or `isRejected` before calling `value`.
-   *
-   * @returns {*}
-   * @throws {*|PendingValueError}
    */
-  value() {
+  value(): T {
     if (this.isResolved()) {
-      return this._value;
+      return this._value!;
     }
 
     if (this.isRejected()) {
@@ -190,13 +163,10 @@ class Maybe {
 
   /**
    * Works like `value`, but will return the error if rejected instead of throwing it.
-   *
-   * @returns {*}
-   * @throws {PendingValueError}
    */
-  valueOrError() {
+  valueOrError(): T | Error {
     if (this.isReady()) {
-      return this._value;
+      return this._value as T | Error;
     }
 
     throw new PendingValueError('cannot get value or error for a Maybe that is not ready');
@@ -207,19 +177,17 @@ class Maybe {
    * or rejects to the resolved or rejected value.
    *
    * You can always convert a Maybe back to a promise!
-   *
-   * @returns {Promise}
    */
-  promise() {
+  promise(): Promise<T> {
     if (this.isResolved()) {
-      return Promise.resolve(this._value);
+      return Promise.resolve(this._value!);
     }
 
     if (this.isRejected()) {
       return Promise.reject(this._value);
     }
 
-    return this._wrappedPromise;
+    return this._wrappedPromise!;
   }
 
   /**
@@ -230,7 +198,6 @@ class Maybe {
    *   of calling `onResolve` with the resolved value.
    * - When this maybe rejects (or immediately if it already is), resolves with the result
    *   of calling `onReject` with the rejected value.
-   * - If still pending, we'll pass `onProgress` through to the promise.
    * - The `onResolve`/`onReject` can return another `Maybe` instance, with similar behavior
    *   for when this happens for promises.
    *
@@ -240,52 +207,45 @@ class Maybe {
    *
    * NOTE: We can't call this method `then`, as otherwise a Maybe instance would be considered
    * promise-alike, which we don't want.
-   *
-   * @param {Function|undefined} [onResolve] Function called when the Maybe resolves with the
-   *   resolved value.
-   * @param {Function|undefined} [onReject] Function called when the Maybe rejects with the
-   *   rejected error.
-   * @param {Function} [onProgress] Passed through to the pending promise if still pending.
-   * @returns {Maybe}
    */
-  when(onResolve, onReject, onProgress) {
+  when<TResult>(
+    onResolve?: (value: T) => TResult | Maybe<TResult> | Promise<TResult>,
+    onReject?: (error: Error) => TResult | Maybe<TResult> | Promise<TResult>
+  ): Maybe<TResult> {
     if (this.isResolved()) {
       if (onResolve) {
         try {
-          return Maybe.from(onResolve(this._value));
-        } catch (error) { // onResolve threw an error
-          return Maybe.fromError(error);
+          return Maybe.from(onResolve(this._value!));
+        } catch (error) {
+          return Maybe.fromError(error as Error);
         }
       }
 
-      return this;
+      return this as unknown as Maybe<TResult>;
     }
 
     if (this.isRejected()) {
       if (onReject) {
         try {
-          return Maybe.from(onReject(this._value));
-        } catch (error) { // onReject threw an error
-          return Maybe.fromError(error);
+          return Maybe.from(onReject(this._value as Error));
+        } catch (error) {
+          return Maybe.fromError(error as Error);
         }
       }
 
-      return this;
+      return this as unknown as Maybe<TResult>;
     }
 
     return Maybe.from(
-      this._wrappedPromise.then(onResolve, onReject, onProgress)
+      this._wrappedPromise!.then(onResolve, onReject)
     );
   }
 
   /**
    * Shortcut to `when` that attaches a handler for when the Maybe rejects. Works similarly to
    * `catch` on promises.
-   *
-   * @param {Function} onReject Function called when the Maybe rejects with the rejected error.
-   * @returns {Maybe}
    */
-  catch(onReject) {
+  catch<TResult>(onReject: (error: Error) => TResult | Maybe<TResult> | Promise<TResult>): Maybe<T | TResult> {
     return this.when(undefined, onReject);
   }
 
@@ -294,14 +254,10 @@ class Maybe {
    * we don't care if the value resolved or rejected, the method will not be called with any
    * arguments. This works similarly to `finally` on promises.
    *
-   * NOTE: Resolves/rejects with the original resolve/reject value, ignorining the result of
+   * NOTE: Resolves/rejects with the original resolve/reject value, ignoring the result of
    * onFinally.
-   *
-   * @param {Function} onFinally Function called, without any arguments, when the maybe either
-   *   resolves or rejects.
-   * @returns {Maybe}
    */
-  finally(onFinally) {
+  finally(onFinally: () => void | Maybe<void> | Promise<void>): Maybe<T> {
     return this.when(
       (value) => Maybe.from(onFinally()).when(() => value),
       (error) => Maybe.from(onFinally()).when(() => Maybe.fromError(error))
@@ -317,11 +273,8 @@ class Maybe {
    * - We'll throw the promise if we are still pending.
    *
    * This is intended for use with React suspense with data fetch.
-   *
-   * @returns {*}
-   * @throws {Promise|*}
    */
-  suspend() {
+  suspend(): T {
     if (this.isReady()) {
       return this.value();
     }
@@ -329,19 +282,11 @@ class Maybe {
     throw this.promise();
   }
 
-  // eslint-disable-next-line jsdoc/require-returns-check
   /**
    * Makes this Maybe adopt the state of another Maybe instance. If the other maybe is
    * not yet ready, we'll register a `when` in order to adopt its eventual state.
-   *
-   * @param {Maybe} otherMaybe
-   * @param {boolean} fromPromise When `true`, this will return a promise. This is useful
-   *   when `_become` is called as part of a `then` chain. If called from the constructor,
-   *   we don't want to call `promise` to avoid an unhandled rejection error.
-   * @returns {Promise}
-   * @private
    */
-  _become(otherMaybe, fromPromise) {
+  private _become(otherMaybe: Maybe<T>, fromPromise: boolean): Promise<T> | void {
     this._isReady = otherMaybe._isReady;
     this._isError = otherMaybe._isError;
     this._value = otherMaybe._value;
@@ -367,18 +312,14 @@ class Maybe {
   }
 
   /**
-   * Adopts the state of of a resolved promise or Maybe. If the `value` is another Maybe,
+   * Adopts the state of a resolved promise or Maybe. If the `value` is another Maybe,
    * we'll defer to `_become`.
    *
    * This will re-resolve the value to preserve promise chaining.
-   *
-   * @param {*} value
-   * @returns {*} The value or a promise for the value.
-   * @private
    */
-  _handleResolve(value) {
+  private _handleResolve(value: T | Maybe<T>): T | Promise<T> {
     if (Maybe.isMaybe(value)) {
-      return this._become(value, true);
+      return this._become(value, true) as Promise<T>;
     }
 
     this._isReady = true;
@@ -389,27 +330,21 @@ class Maybe {
   }
 
   /**
-   * Adopts the state of of a rejected promise or Maybe. If the `value` is another Maybe,
+   * Adopts the state of a rejected promise or Maybe. If the `error` is another Maybe,
    * we'll defer to `_become`.
    *
    * This will re-reject the value to preserve promise chaining.
-   *
-   * @param {*} error
-   * @returns {Promise} A promise rejected to the error.
-   * @private
    */
-  _handleReject(error) {
+  private _handleReject(error: Error | Maybe<T>): Promise<never> {
     if (Maybe.isMaybe(error)) {
-      return this._become(error, true);
+      return this._become(error, true) as Promise<never>;
     }
 
     this._isReady = true;
-    this._value = error;
+    this._value = error as unknown as T;
     this._isError = true;
     this._wrappedPromise = null;
 
     return Promise.reject(error);
   }
 }
-
-module.exports = Maybe;
