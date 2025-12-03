@@ -10,12 +10,17 @@ declare const PromiseUtils: {
     /**
      * Returns a promise that can be resolved or rejected on-demand by other code. This is
      * frequently useful in unit tests.
+     *
+     * @returns A deferred object with a promise and its resolve/reject functions.
      */
     defer<T>(): Deferred<T>;
     /**
      * Runs a series of tasks in-order, with the next not starting until the previous completes.
      * Unlike a normal AsyncQueue, if a task fails, the rest of the tasks will not run. In addition,
      * this method will resolve with the resolved values of each task.
+     *
+     * @param tasks An array of task functions to run in sequence.
+     * @returns A promise that resolves to an array of task results.
      */
     serialize(tasks: Array<() => unknown>): Promise<unknown[]>;
     /**
@@ -23,6 +28,9 @@ declare const PromiseUtils: {
      *
      * NOTE: If a `timeout` is provided, this will reject if the `timeout` is reached without the
      * passed `condition` evaluating to `true`.
+     *
+     * @param condition
+     * @param timeout
      */
     pollForCondition(condition: () => boolean, timeout?: number | null): Promise<void>;
     /**
@@ -31,10 +39,15 @@ declare const PromiseUtils: {
      * ("thenable") something that acts a promise.
      *
      * This method returns `true` if the `thing` passed in is "thenable".
+     *
+     * @param thing The value to check if it is thenable.
+     * @returns True if the thing is thenable, false otherwise.
      */
     isThenable(thing: unknown): thing is PromiseLike<unknown>;
     /**
      * Returns a promise that resolves after the given time has passed.
+     *
+     * @param time
      */
     timeout(time: number): Promise<void>;
 };

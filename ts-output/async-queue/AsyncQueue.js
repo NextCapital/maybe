@@ -9,6 +9,9 @@ import PromiseUtils from '../promise-utils/PromiseUtils.js';
 export default class AsyncQueue {
     /**
      * A queue for performing async tasks with a maximum concurrency.
+     *
+     * @param root0
+     * @param root0.maxConcurrency
      */
     constructor({ maxConcurrency = 1 } = {}) {
         this.maxConcurrency = maxConcurrency;
@@ -17,6 +20,8 @@ export default class AsyncQueue {
     }
     /**
      * The length of the queue instance.
+     *
+     * @returns The number of tasks waiting in the queue.
      */
     get length() {
         return this.queue.length;
@@ -24,6 +29,9 @@ export default class AsyncQueue {
     /**
      * Performs the task immediately if possible, otherwise adds it to the queue to be performed
      * when a running task completes.
+     *
+     * @param task The async task function to perform.
+     * @returns A promise that resolves when the task completes.
      */
     perform(task) {
         const result = PromiseUtils.defer();
@@ -40,6 +48,10 @@ export default class AsyncQueue {
     }
     /**
      * Actually runs a given task.
+     *
+     * @param result The deferred object to resolve/reject.
+     * @param task The async task function to perform.
+     * @returns A promise that resolves when the task completes.
      */
     _performTask(result, task) {
         return Promise.resolve(task()).then((value) => {
