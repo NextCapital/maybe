@@ -36,8 +36,8 @@
     "license:development": "license-checker-rseidelsohn --summary --development --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
     "license:production": "license-checker-rseidelsohn --summary --production --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
     "lint": "npm run lint:js && npm run lint:spelling",
-    "lint:js": "eslint \"js/**/*.{js,jsx}\" --cache",
-    "lint:spelling": "cspell \"js/**/*.{js,jsx}\" --cache --no-progress",
+    "lint:js": "eslint \"js/**/*.{js,jsx,ts}\" --cache",
+    "lint:spelling": "cspell \"js/**/*.{js,jsx,ts}\" --cache --no-progress",
     "test": "jest"
   },
   "devDependencies": {
@@ -46,6 +46,8 @@
     "@nextcapital/eslint-config": "^0.1.6",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
     "cspell": "^8.19.2",
     "eslint": "^9.25.1",
     "eslint-plugin-import": "^2.31.0",

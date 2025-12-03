@@ -105,6 +105,10 @@ describe('AsyncQueue', () => {
       expect(task).toHaveBeenCalled();
     });
 
+    /**
+     *
+     * @param perform
+     */
     function testHandlesQueue(perform) {
       describe('when the queue is empty', () => {
         beforeEach(() => {

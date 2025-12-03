@@ -1,7 +1,7 @@
 import PromiseUtils, { Deferred } from '../promise-utils/PromiseUtils.js';
 
 interface AsyncQueueOptions {
-  maxConcurrency?: number;
+  maxConcurrency?: number
 }
 
 /**
@@ -13,11 +13,16 @@ interface AsyncQueueOptions {
  */
 export default class AsyncQueue {
   maxConcurrency: number;
+
   private queue: Array<() => void>;
+
   private numRunningTasks: number;
 
   /**
    * A queue for performing async tasks with a maximum concurrency.
+   *
+   * @param root0
+   * @param root0.maxConcurrency
    */
   constructor({ maxConcurrency = 1 }: AsyncQueueOptions = {}) {
     this.maxConcurrency = maxConcurrency;
@@ -27,6 +32,8 @@ export default class AsyncQueue {
 
   /**
    * The length of the queue instance.
+   *
+   * @returns The number of tasks waiting in the queue.
    */
   get length(): number {
     return this.queue.length;
@@ -35,6 +42,9 @@ export default class AsyncQueue {
   /**
    * Performs the task immediately if possible, otherwise adds it to the queue to be performed
    * when a running task completes.
+   *
+   * @param task The async task function to perform.
+   * @returns A promise that resolves when the task completes.
    */
   perform<TResult>(task: () => Promise<TResult>): Promise<TResult> {
     const result = PromiseUtils.defer<TResult>();
@@ -54,8 +64,15 @@ export default class AsyncQueue {
 
   /**
    * Actually runs a given task.
+   *
+   * @param result The deferred object to resolve/reject.
+   * @param task The async task function to perform.
+   * @returns A promise that resolves when the task completes.
    */
-  private _performTask<TResult>(result: Deferred<TResult>, task: () => Promise<TResult>): Promise<void> {
+  private _performTask<TResult>(
+    result: Deferred<TResult>,
+    task: () => Promise<TResult>
+  ): Promise<void> {
     return Promise.resolve(task()).then((value) => {
       result.resolve(value);
     }).catch((ex) => {
