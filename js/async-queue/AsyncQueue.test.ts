@@ -1,8 +1,8 @@
-const PromiseUtils = require('../promise-utils/PromiseUtils');
-const AsyncQueue = require('./AsyncQueue');
+import PromiseUtils from '../promise-utils/PromiseUtils.js';
+import AsyncQueue from './AsyncQueue.js';
 
 describe('AsyncQueue', () => {
-  let asyncQueue;
+  let asyncQueue: AsyncQueue;
 
   beforeEach(() => {
     asyncQueue = new AsyncQueue({ maxConcurrency: 3 });
@@ -29,7 +29,7 @@ describe('AsyncQueue', () => {
   });
 
   describe('perform', () => {
-    let task;
+    let task: jest.Mock<Promise<void>, []>;
 
     beforeEach(() => {
       jest.spyOn(asyncQueue, '_performTask').mockImplementation();
