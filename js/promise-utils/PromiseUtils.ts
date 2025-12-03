@@ -37,14 +37,14 @@ const PromiseUtils = {
    * @param tasks An array of task functions to run in sequence.
    * @returns A promise that resolves to an array of task results.
    */
-  serialize(tasks: Array<() => unknown>): Promise<unknown[]> {
+  serialize<T>(tasks: Array<() => T>): Promise<T[]> {
     return tasks.reduce(
       (result, task) => result.then((value) => (
         Promise.resolve(task()).then(
           (taskResult) => value.concat([taskResult])
         )
       )),
-      Promise.resolve([] as unknown[])
+      Promise.resolve([] as T[])
     );
   },
 

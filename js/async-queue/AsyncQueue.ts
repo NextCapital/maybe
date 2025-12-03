@@ -14,7 +14,7 @@ interface AsyncQueueOptions {
 export default class AsyncQueue {
   maxConcurrency: number;
 
-  private queue: Array<() => void>;
+  private queue: Array<() => unknown>;
 
   private numRunningTasks: number;
 
