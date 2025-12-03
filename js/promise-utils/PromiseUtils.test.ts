@@ -1,4 +1,4 @@
-const PromiseUtils = require('./PromiseUtils');
+import PromiseUtils from './PromiseUtils.js';
 
 describe('PromiseUtils', () => {
   beforeEach(() => {
@@ -91,7 +91,7 @@ describe('PromiseUtils', () => {
 
   describe('pollForCondition', () => {
     test('resolves when the condition becomes true', async () => {
-      let trigger = false;
+      let trigger: boolean = false;
       setTimeout(() => { trigger = true; }, 100);
 
       const promise = PromiseUtils.pollForCondition(() => trigger);
