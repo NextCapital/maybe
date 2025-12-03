@@ -3,11 +3,10 @@
   "version": "1.2.0",
   "description": "For things that are 'maybe' a promise!",
   "license": "Apache-2.0",
-  "main": "js/index.js",
-  "types": "./types/index.d.ts",
+  "main": "dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": [
-    "js",
-    "types"
+    "dist"
   ],
   "keywords": [
     "maybe",
@@ -30,6 +29,9 @@
   },
   "homepage": "https://github.com/nextcapital/maybe#readme",
   "scripts": {
+    "build": "npm run clean && tsc",
+    "clean": "rm -rf dist ts-output",
+    "prepublishOnly": "npm run build",
     "ci:local": "npm run lint && npm run test && npm run license",
     "license": "npm run license:production && npm run license:development",
     "tsc": "tsc",
