@@ -1,7 +1,7 @@
 export interface Deferred<T> {
   promise: Promise<T>
   resolve: (value: T) => void
-  reject: (error: Error) => void
+  reject: (error: unknown) => void
 }
 
 /**
@@ -16,7 +16,7 @@ const PromiseUtils = {
    */
   defer<T>(): Deferred<T> {
     let resolve: (value: T) => void;
-    let reject: (error: Error) => void;
+    let reject: (error: unknown) => void;
     const promise = new Promise<T>((_resolve, _reject) => {
       resolve = _resolve;
       reject = _reject;

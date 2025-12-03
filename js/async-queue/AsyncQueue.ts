@@ -76,7 +76,7 @@ export default class AsyncQueue {
     return Promise.resolve(task()).then((value) => {
       result.resolve(value);
     }).catch((ex) => {
-      result.reject(ex as Error);
+      result.reject(ex);
     }).finally(() => {
       // now that we are complete, a task from the queue can run
       if (this.queue.length) {

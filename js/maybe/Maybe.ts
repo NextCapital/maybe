@@ -72,7 +72,7 @@ export default class Maybe<T> {
    * @param error The error to create a rejected Maybe from.
    * @returns A rejected Maybe instance.
    */
-  static fromError(error: Error): Maybe<never> {
+  static fromError(error: unknown): Maybe<never> {
     return new Maybe(error, true) as Maybe<never>;
   }
 
@@ -203,9 +203,9 @@ export default class Maybe<T> {
    *
    * @returns The value or error if ready.
    */
-  valueOrError(): T | Error {
+  valueOrError(): T | unknown {
     if (this.isReady()) {
-      return this._value as T | Error;
+      return this._value as T | unknown;
     }
 
     throw new PendingValueError('cannot get value or error for a Maybe that is not ready');
@@ -255,14 +255,14 @@ export default class Maybe<T> {
    */
   when<TResult>(
     onResolve?: (value: T) => TResult | Maybe<TResult> | Promise<TResult>,
-    onReject?: (error: Error) => TResult | Maybe<TResult> | Promise<TResult>
+    onReject?: (error: unknown) => TResult | Maybe<TResult> | Promise<TResult>
   ): Maybe<TResult> {
     if (this.isResolved()) {
       if (onResolve) {
         try {
           return Maybe.from(onResolve(this._value!));
         } catch (error) {
-          return Maybe.fromError(error as Error);
+          return Maybe.fromError(error);
         }
       }
 
@@ -272,9 +272,9 @@ export default class Maybe<T> {
     if (this.isRejected()) {
       if (onReject) {
         try {
-          return Maybe.from(onReject(this._value as Error));
+          return Maybe.from(onReject(this._value));
         } catch (error) {
-          return Maybe.fromError(error as Error);
+          return Maybe.fromError(error);
         }
       }
 
@@ -294,7 +294,7 @@ export default class Maybe<T> {
    * @returns A new Maybe with the chained result.
    */
   catch<TResult>(
-    onReject: (error: Error) => TResult | Maybe<TResult> | Promise<TResult>
+    onReject: (error: unknown) => TResult | Maybe<TResult> | Promise<TResult>
   ): Maybe<T | TResult> {
     return this.when(undefined, onReject);
   }
@@ -400,9 +400,9 @@ export default class Maybe<T> {
    * @param error The error or Maybe to reject with.
    * @returns A rejected promise.
    */
-  private _handleReject(error: Error | Maybe<T>): Promise<never> {
+  private _handleReject(error: unknown | Maybe<T>): Promise<never> {
     if (Maybe.isMaybe(error)) {
-      return this._become(error, true) as Promise<never>;
+      return this._become(error as Maybe<T>, true) as Promise<never>;
     }
 
     this._isReady = true;
