@@ -30,8 +30,9 @@
   },
   "homepage": "https://github.com/nextcapital/maybe#readme",
   "scripts": {
-    "ci": "npm run lint && npm run test && npm run license",
+    "ci:local": "npm run lint && npm run test && npm run license",
     "license": "npm run license:production && npm run license:development",
+    "tsc": "tsc",
     "license:development": "license-checker-rseidelsohn --summary --development --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
     "license:production": "license-checker-rseidelsohn --summary --production --failOn='AGPL;CAL;CC BY-NC;CC BY-SA;CC BY-NC-SA;CC BY-NC-ND;CPAL;CPOL;EUPL;GPL;LGPL;NGPL;OSL;QPL;SISSL;Sleepycat;SSPL'",
     "lint": "npm run lint:js && npm run lint:spelling",
