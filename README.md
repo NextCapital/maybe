@@ -2,7 +2,7 @@
 
 [![NextCapital Open Source](https://img.shields.io/badge/NextCapital-Open%20Source-%2300a5f6?style=for-the-badge&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAA/FBMVEUApfYAAAAApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYApfYk6uC4AAAAU3RSTlMAAJHwVI7ULQcDHcG4FyyxdAE13JQInQLv+G4Kl9AoePvqRynk6UYLnNNrZxrCsxLDsBPPK3Np5UAu51X0YpnSKjbd/oQFGboepg+0cZPEIATmP31l8v0AAAC1SURBVBgZBcGHIsMAFEDReykVWgRtanYYCVp71ay95/v/f3EOMDRcAlVVgZEYLYPCWILA+ERUqgiTU9MpCDOzMVeDaiXqGSiUGvMLLC7F8gqgkjVb7c7q2voGiCp5EZvlre0URRW6vdjZTVBRhe5e7B8kqKiSF3F4dHySoqgkzdbpWf+83QFRuGhcXpFfx80AEG7v7h8e4ek5igzgpRevbwj99w+A7DO+vkGh9oOQ1X//QFXVf8KAFHYrlyAPAAAAAElFTkSuQmCC)](https://www.nextcapital.com)
 
-This project contains three main exports:
+This project is written in TypeScript and contains three main exports:
 
 - `Maybe` - A class for things that are "maybe" a promise, that allows synchronously accessing the state and value of a resolved promise.
 - `PromiseUtils` - A collection of helper methods for working with native promises
@@ -29,7 +29,7 @@ error synchronously. The `Maybe` class allows you to do to both. This allows us 
 synchronously on data if possible, and wait for it easily if not.
 
 ### API
-Probably best to refer to the [in-code documentation](./js/maybe/Maybe.js). The main methods are:
+Probably best to refer to the [in-code documentation](./js/maybe/Maybe.ts). The main methods are:
 
 - `Maybe.from(value)` - Converts `value` to a `Maybe` instance if it is not already
 - `Maybe.build(isReady, valueGetter, promiseGetter)` - Builds a `Maybe` from the `valueGetter` or `promiseGetter` depending on the value of `isReady`
@@ -179,7 +179,7 @@ expect(notCalledFn).not.toBeCalled();
 expect(caughtMaybe.value()).toBe(value);
 ```
 
-See the [unit tests](./js/maybe/Maybe.test.js) for more examples.
+See the [unit tests](./js/maybe/Maybe.test.ts) for more examples.
 
 ### React 18 - Suspend With Data Fetch
 
@@ -213,7 +213,7 @@ previous completes.
 Notably, the `Maybe` library on its own does not resolve the need to hook into React 18's still-nebulous caching system for suspense with data fetch. Once more details are released about this from the React team, we'll update these examples.
 
 ## PromiseUtils
-The `PromiseUtils` object contains a set of nifty helper functions. See the [full docs](./js/promise-utils/PromiseUtils.js) for full details. Here is the gist:
+The `PromiseUtils` object contains a set of nifty helper functions. See the [full docs](./js/promise-utils/PromiseUtils.ts) for full details. Here is the gist:
 
 - `defer` - Returns a pending promise alongside methods to resolve or reject it.
 - `serialize(tasks)` - Initializes and runs each async task in serial
@@ -222,7 +222,7 @@ The `PromiseUtils` object contains a set of nifty helper functions. See the [ful
 - `timeout(time)` - Returns a promise that resolves after the given time
 
 ## AsyncQueue
-The `AsyncQueue` class allows running async tasks against a queue with a maximum concurrency. If the max concurrency is reached, tasks will be queued until capacity is available. See the [full docs](./js/async-queue/AsyncQueue.js) for more.
+The `AsyncQueue` class allows running async tasks against a queue with a maximum concurrency. If the max concurrency is reached, tasks will be queued until capacity is available. See the [full docs](./js/async-queue/AsyncQueue.ts) for more.
 
 The main method here is `perform(task)`, where `task` is a method that returns a promise when called. This will return a promise that resolves/rejects with the same value as the promise returned from `task`.
 
