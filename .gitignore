@@ -2,10 +2,12 @@
 coverage/
 docs/
 dist/
+ts-output/
 node_modules/
 test-report.xml
 .cspellcache
 .eslintcache
+*.tsbuildinfo
 TODO.md
 PROMPT.md
 PROMPTS.md
