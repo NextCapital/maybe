@@ -52,7 +52,7 @@ export default class Maybe<T> {
    * Creates a rejected Maybe instance for the error.
    */
   static fromError(error: Error): Maybe<never> {
-    return new Maybe(error, true);
+    return new Maybe(error, true) as Maybe<never>;
   }
 
   /**
@@ -238,7 +238,7 @@ export default class Maybe<T> {
 
     return Maybe.from(
       this._wrappedPromise!.then(onResolve, onReject)
-    );
+    ) as Maybe<TResult>;
   }
 
   /**
