@@ -10,12 +10,14 @@ import PendingValueError from './PendingValueError.js';
  * error synchronously. The `Maybe` class allows you to do to both. This allows us to act
  * synchronously on data if possible, and wait for it easily if not.
  */
-export default class Maybe<T> {
+export default class Maybe<T, E = unknown> {
   private _isReady: boolean;
 
   private _isError: boolean;
 
   private _value: T | undefined;
+
+  private _error: E | undefined;
 
   private _wrappedPromise: Promise<T> | null;
 
@@ -23,7 +25,7 @@ export default class Maybe<T> {
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
    */
-  static from<U>(thing: U | Promise<U> | Maybe<U>): Maybe<U> {
+  static from<U, V = unknown>(thing: U | Promise<U> | Maybe<U, V>): Maybe<U, V> {
     if (this.isMaybe(thing)) {
       return thing;
     }
@@ -36,11 +38,11 @@ export default class Maybe<T> {
    * `Maybe` will be created from the resulting value. Otherwise, `promiseGetter` will be called
    * and a `Maybe` will be created from the resulting Promise.
    */
-  static build<U>(
+  static build<U, V = unknown>(
     isReady: boolean,
     valueGetter: () => U,
     promiseGetter: () => Promise<U>
-  ): Maybe<U> {
+  ): Maybe<U, V> {
     if (isReady) {
       return new Maybe(valueGetter());
     }
@@ -51,15 +53,15 @@ export default class Maybe<T> {
   /**
    * Returns `true` if `thing` is a `Maybe` instance.
    */
-  static isMaybe<U = unknown>(thing: U | Maybe<U>): thing is Maybe<U> {
+  static isMaybe<U, V = unknown>(thing: any): thing is Maybe<U, V> {
     return thing instanceof Maybe;
   }
 
   /**
    * Creates a rejected Maybe instance for the error.
    */
-  static fromError<U = unknown>(error: U): Maybe<U> {
-    return new Maybe(error, true);
+  static fromError<V = unknown>(error: V): Maybe<undefined, V> {
+    return new Maybe(undefined, true, error);
   }
 
   /**
@@ -67,40 +69,46 @@ export default class Maybe<T> {
    *
    * - If all entries are resolved Maybe instances, we will return a `Maybe` resolved to
    * an array of all resolved values.
-   * - If any entry has rejected, will return a Maybe rejected to the first rejected value.
+   * - If any entry has rejected, will throw a Maybe rejected to the first rejected value.
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
    * for the `promise()` for each input Maybe.
    */
-  static all<U>(array: Array<U | Promise<U> | Maybe<U>>): Maybe<U | U[]> {
+  static all<U extends readonly unknown[] | []>(array: U): Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }> {
     const maybeArray = array.map((thing) => Maybe.from(thing));
     const allResolved = maybeArray.every((maybe) => maybe.isResolved());
 
     if (allResolved) {
-      return Maybe.from(maybeArray.map((maybe) => maybe.value()));
+      // The type cast is necessary here and below because TS cannot track the type transformations
+      // through the .map call.
+      return Maybe.from(maybeArray.map((maybe) => maybe.value())) as Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }>;
     }
 
     const rejectedEntry = maybeArray.find((maybe) => maybe.isRejected());
     if (rejectedEntry) {
-      return rejectedEntry; // Returns Maybe<U> instead of Maybe<U[]> - cast to array @pierce?
+      throw rejectedEntry;
     }
 
-    return Maybe.from(Promise.all(maybeArray.map((maybe) => maybe.promise())));
+    return Maybe.from(Promise.all(maybeArray.map((maybe) => maybe.promise()))) as Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }>;
   }
 
   /**
    * Builds a new `Maybe` instance.
    */
-  constructor(thing: T | Promise<T> | Maybe<T>, isError = false) {
+  constructor(thing: T | Promise<T> | Maybe<T, E>, isError = false, error?: E) {
     const isMaybe = Maybe.isMaybe(thing);
     const isPromise = PromiseUtils.isThenable(thing);
 
     this._isReady = !isPromise;
-    this._isError = false;
+
     this._value = (isPromise || isMaybe) ? undefined : thing;
+    this._error = isError ? error : undefined;
+
     this._wrappedPromise = null;
 
     if (this._isReady && isError) {
       this._isError = true;
+    } else {
+      this._isError = false;
     }
 
     if (isPromise) {
@@ -162,7 +170,7 @@ export default class Maybe<T> {
     }
 
     if (this.isRejected()) {
-      throw this._value;
+      throw this._error;
     }
 
     throw new PendingValueError('cannot get value for a Maybe that is not ready');
@@ -171,9 +179,9 @@ export default class Maybe<T> {
   /**
    * Works like `value`, but will return the error if rejected instead of throwing it.
    */
-  valueOrError(): T {
+  valueOrError(): T | E {
     if (this.isReady()) {
-      return this._value!;
+      return this._isError ? this._error! : this._value!;
     }
 
     throw new PendingValueError('cannot get value or error for a Maybe that is not ready');
@@ -185,13 +193,13 @@ export default class Maybe<T> {
    *
    * You can always convert a Maybe back to a promise!
    */
-  promise(): Promise<T> {
+  promise(): Promise<T | E> {
     if (this.isResolved()) {
       return Promise.resolve(this._value!);
     }
 
     if (this.isRejected()) {
-      return Promise.reject(this._value);
+      return Promise.reject(this._error);
     }
 
     return this._wrappedPromise!;
@@ -215,10 +223,23 @@ export default class Maybe<T> {
    * NOTE: We can't call this method `then`, as otherwise a Maybe instance would be considered
    * promise-alike, which we don't want.
    */
-  when<TResult = T>(
-    onResolve?: (value: T) => TResult | Maybe<TResult> | Promise<TResult>,
-    onReject?: (value: T | undefined) => TResult | Maybe<TResult> | Promise<TResult>
-  ): Maybe<TResult | unknown> {
+
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(): Maybe<T, E> | Maybe<TResult1, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(
+    onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>
+  ): Maybe<T, E> | Maybe<TResult1, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(
+    onResolve: undefined,
+    onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
+  ): Maybe<T, E> | Maybe<TResult2, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(
+    onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>,
+    onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
+  ): Maybe<TResult1 | TResult2, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(
+    onResolve?: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>,
+    onReject?: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
+  ): Maybe<T, E> | Maybe<TResult1 | TResult2, EResult> | Maybe<undefined, unknown> {
     if (this.isResolved()) {
       if (onResolve) {
         try {
@@ -234,7 +255,7 @@ export default class Maybe<T> {
     if (this.isRejected()) {
       if (onReject) {
         try {
-          return Maybe.from(onReject(this._value));
+          return Maybe.from(onReject(this._error));
         } catch (error) {
           return Maybe.fromError(error);
         }
@@ -245,16 +266,16 @@ export default class Maybe<T> {
 
     return Maybe.from(
       this._wrappedPromise!.then(onResolve, onReject)
-    );
+    ) as Maybe<TResult1 | TResult2, EResult>;
   }
 
   /**
    * Shortcut to `when` that attaches a handler for when the Maybe rejects. Works similarly to
    * `catch` on promises.
    */
-  catch<TResult = T>(
-    onReject: (value: T | undefined) => TResult | Maybe<TResult> | Promise<TResult>
-  ): Maybe<TResult | unknown> {
+  catch<TResult = T, EResult = unknown>(
+    onReject: (error: E | undefined) => TResult | Maybe<TResult, EResult> | Promise<TResult>
+  ): Maybe<T, E> | Maybe<TResult, EResult> | Maybe<undefined, unknown> {
     return this.when(undefined, onReject);
   }
 
@@ -266,7 +287,9 @@ export default class Maybe<T> {
    * NOTE: Resolves/rejects with the original resolve/reject value, ignoring the result of
    * onFinally.
    */
-  finally(onFinally: () => void | Maybe<void> | Promise<void>): Maybe<T | unknown> {
+  finally<TResult1 = T, TResult2 = never, EResult = unknown>(
+    onFinally: () => any
+  ): Maybe<T, E> | Maybe<TResult1 | TResult2, EResult> | Maybe<undefined, unknown> {
     return this.when(
       (value) => Maybe.from(onFinally()).when(() => value),
       (error) => Maybe.from(onFinally()).when(() => Maybe.fromError(error))
@@ -295,12 +318,13 @@ export default class Maybe<T> {
    * Makes this Maybe adopt the state of another Maybe instance. If the other maybe is
    * not yet ready, we'll register a `when` in order to adopt its eventual state.
    */
-  private _become(otherMaybe: Maybe<T>, fromPromise: true): Promise<T>;
-  private _become(otherMaybe: Maybe<T>, fromPromise: false): Promise<T> | void;
-  private _become(otherMaybe: Maybe<T>, fromPromise: boolean): Promise<T> | void {
+  private _become(otherMaybe: Maybe<T, E>, fromPromise: true): Promise<T | E>;
+  private _become(otherMaybe: Maybe<T, E>, fromPromise: false): Promise<T> | void;
+  private _become(otherMaybe: Maybe<T, E>, fromPromise: boolean): Promise<T | E> | void {
     this._isReady = otherMaybe._isReady;
     this._isError = otherMaybe._isError;
     this._value = otherMaybe._value;
+    this._error = otherMaybe._error;
     this._wrappedPromise = null;
 
     if (otherMaybe.isPending()) {
@@ -329,9 +353,9 @@ export default class Maybe<T> {
    *
    * This will re-resolve the value to preserve promise chaining.
    */
-  private _handleResolve(value: T | Maybe<T>): T | Promise<T> {
+  private _handleResolve(value: T | Maybe<T, E>): T | Promise<T> {
     if (Maybe.isMaybe(value)) {
-      return this._become(value, true);
+      return this._become(value, true) as Promise<T>;
     }
 
     this._isReady = true;
@@ -347,14 +371,14 @@ export default class Maybe<T> {
    *
    * This will re-reject the value to preserve promise chaining.
    */
-  private _handleReject(error: unknown | Maybe<T>): Promise<T | unknown> {
+  private _handleReject(error: E | Maybe<T, E> | undefined): Promise<E | undefined> {
     if (Maybe.isMaybe(error)) {
-      // this is not type-safe, as JS errors can be anything
-      return this._become(error as Maybe<T>, true);
+      return this._become(error, true) as Promise<E>;
     }
 
     this._isReady = true;
-    this._value = error as unknown as T; // this is not type-safe, as JS errors can be anything
+    this._value = undefined;
+    this._error = error;
     this._isError = true;
     this._wrappedPromise = null;
 
