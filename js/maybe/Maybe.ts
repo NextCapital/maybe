@@ -21,6 +21,8 @@ export default class Maybe<T, E = unknown> {
 
   private _wrappedPromise: Promise<T> | null;
 
+  declare readonly __state: 'resolved' | 'rejected' | 'pending';
+
   /**
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
@@ -130,14 +132,14 @@ export default class Maybe<T, E = unknown> {
    * Returns `true` if the instance is resolved or rejected. If the promise is still pending,
    * this will return `false`.
    */
-  isReady(): boolean {
+  isReady(): this is Maybe<T, E> & { __state: 'resolved' | 'rejected'; } {
     return this._isReady;
   }
 
   /**
    * Returns `true` if the instance is not yet resolved or rejected. The opposite of `isReady`.
    */
-  isPending(): boolean {
+  isPending(): this is Maybe<T, E> & { __state: 'pending'; } {
     return !this._isReady;
   }
 
@@ -145,7 +147,7 @@ export default class Maybe<T, E = unknown> {
    * Returns `true` if the instance is resolved. A call to `value()` will return the resolved
    * value synchronously.
    */
-  isResolved(): boolean {
+  isResolved(): this is Maybe<T, E> & { __state: 'resolved'; } {
     return this._isReady && !this._isError;
   }
 
@@ -153,7 +155,7 @@ export default class Maybe<T, E = unknown> {
    * Returns `true` if the instance is rejected. A call to `value()` will throw the rejected
    * error value.
    */
-  isRejected(): boolean {
+  isRejected(): this is Maybe<T, E> & { __state: 'rejected'; } {
     return this._isReady && this._isError;
   }
 
@@ -179,9 +181,16 @@ export default class Maybe<T, E = unknown> {
   /**
    * Works like `value`, but will return the error if rejected instead of throwing it.
    */
+  valueOrError(this: Maybe<T, E> & { __state: 'resolved'; }): T;
+  valueOrError(this: Maybe<T, E> & { __state: 'rejected'; }): E;
+  valueOrError(this: Maybe<T, E> & { __state: 'pending'; }): never;
   valueOrError(): T | E {
-    if (this.isReady()) {
-      return this._isError ? this._error! : this._value!;
+    if (this.isResolved()) {
+      return this._value!;
+    }
+
+    if (this.isRejected()) {
+      return this._error!;
     }
 
     throw new PendingValueError('cannot get value or error for a Maybe that is not ready');
@@ -193,6 +202,9 @@ export default class Maybe<T, E = unknown> {
    *
    * You can always convert a Maybe back to a promise!
    */
+  promise(this: Maybe<T, E> & { __state: 'resolved'; }): Promise<T>;
+  promise(this: Maybe<T, E> & { __state: 'rejected'; }): Promise<E>;
+  promise(this: Maybe<T, E> & { __state: 'pending'; }): Promise<T | E>;
   promise(): Promise<T | E> {
     if (this.isResolved()) {
       return Promise.resolve(this._value!);
@@ -224,18 +236,22 @@ export default class Maybe<T, E = unknown> {
    * promise-alike, which we don't want.
    */
 
-  when<TResult1 = T, TResult2 = never, EResult = unknown>(): Maybe<T, E> | Maybe<TResult1, EResult>;
-  when<TResult1 = T, TResult2 = never, EResult = unknown>(
-    onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>
-  ): Maybe<T, E> | Maybe<TResult1, EResult> | Maybe<undefined, unknown>;
-  when<TResult1 = T, TResult2 = never, EResult = unknown>(
-    onResolve: undefined,
-    onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
-  ): Maybe<T, E> | Maybe<TResult2, EResult> | Maybe<undefined, unknown>;
-  when<TResult1 = T, TResult2 = never, EResult = unknown>(
-    onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>,
-    onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
-  ): Maybe<TResult1 | TResult2, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'pending'; }): Maybe<TResult1, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'resolved'; }): Maybe<T, E>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'rejected'; }): Maybe<T, E>;
+  // when<TResult1 = T, TResult2 = never, EResult = unknown>(): Maybe<T, E> | Maybe<TResult1, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'pending'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>): Maybe<TResult1, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'resolved'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>): Maybe<TResult1, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'rejected'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>): Maybe<T, E>;
+  // when<TResult1 = T, TResult2 = never, EResult = unknown>(onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>): Maybe<T, E> | Maybe<TResult1, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'pending'; }, onResolve: undefined, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult2, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'resolved'; }, onResolve: undefined, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<T, E>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'rejected'; }, onResolve: undefined, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult2, EResult> | Maybe<undefined, unknown>;
+  // when<TResult1 = T, TResult2 = never, EResult = unknown>(onResolve: undefined, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<T, E> | Maybe<TResult2, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'pending'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult1 | TResult2, EResult>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'resolved'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult1, EResult> | Maybe<undefined, unknown>;
+  when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'rejected'; }, onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult2, EResult> | Maybe<undefined, unknown>;
+  // when<TResult1 = T, TResult2 = never, EResult = unknown>(onResolve: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>, onReject: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>): Maybe<TResult1 | TResult2, EResult> | Maybe<undefined, unknown>;
   when<TResult1 = T, TResult2 = never, EResult = unknown>(
     onResolve?: (value: T) => TResult1 | Maybe<TResult1, EResult> | Promise<TResult1>,
     onReject?: (error: E | undefined) => TResult2 | Maybe<TResult2, EResult> | Promise<TResult2>
@@ -306,9 +322,16 @@ export default class Maybe<T, E = unknown> {
    *
    * This is intended for use with React suspense with data fetch.
    */
+  suspend(this: Maybe<T, E> & { __state: 'resolved'; }): T;
+  suspend(this: Maybe<T, E> & { __state: 'rejected'; }): never;
+  suspend(this: Maybe<T, E> & { __state: 'pending'; }): never;
   suspend(): T {
-    if (this.isReady()) {
+    if (this.isResolved()) {
       return this.value();
+    }
+
+    if (this.isRejected()) {
+      throw this._error;
     }
 
     throw this.promise();
