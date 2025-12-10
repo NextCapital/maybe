@@ -1,11 +1,24 @@
 import PromiseUtils from '../promise-utils/PromiseUtils.js';
 import PendingValueError from './PendingValueError.js';
 
-export type UnwrapMaybe<T> = T extends Maybe<infer U, infer V>
-  ? U extends Maybe<any, any>
-  ? UnwrapMaybe<U>
-  : Maybe<U, V>
-  : T;
+type UnwrapValue<T> =
+  T extends Maybe<infer V, any> ? V :
+  T extends Promise<infer V> ? V :
+  T;
+
+type AllResolved<U extends readonly unknown[]> = {
+  [K in keyof U]: U[K] extends Maybe<any, any>
+  ? (U[K] & { __state: 'resolved' })
+  : U[K] extends Promise<any>
+  ? never  // Promises make it pending, not resolved
+  : U[K]
+}
+
+type HasPending<U extends readonly unknown[]> = {
+  [K in keyof U]: U[K] extends Maybe<any, any>
+  ? (U[K] & { __state: 'resolved' | 'pending' })
+  : U[K]  // Raw values and Promises are OK here
+}
 
 /**
  * The `Maybe` class acts like a `Maybe` type in functional programming: but instead of being
@@ -86,14 +99,20 @@ export default class Maybe<T, E = unknown> {
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
    * for the `promise()` for each input Maybe.
    */
-  static all<U extends readonly unknown[] | []>(array: U): Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }> {
+  static all<U extends readonly unknown[] | []>(array: AllResolved<U>): Maybe<{ -readonly [P in keyof U]: UnwrapValue<U[P]> }, unknown> & { __state: 'resolved' };
+  static all<U extends readonly unknown[] | []>(array: HasPending<U>): Maybe<{ -readonly [P in keyof U]: UnwrapValue<U[P]> }, unknown> & { __state: 'pending' };
+  static all<U extends readonly unknown[] | []>(array: U): Maybe<{ -readonly [P in keyof U]: UnwrapValue<U[P]> }, unknown> & { __state: 'resolved' | 'pending' };
+  static all<U extends readonly unknown[] | []>(array: U): Maybe<{ -readonly [P in keyof U]: UnwrapValue<U[P]> }, unknown> & { __state: 'resolved' | 'pending' } {
     const maybeArray = array.map((thing) => Maybe.from(thing));
     const allResolved = maybeArray.every((maybe) => maybe.isResolved());
+
+    // Helper to preserve tuple types through map operations
+    type Result = Maybe<{ -readonly [P in keyof U]: UnwrapValue<U[P]> }, unknown>;
 
     if (allResolved) {
       // The type cast is necessary here and below because TS cannot track the type transformations
       // through the .map call.
-      return Maybe.from(maybeArray.map((maybe) => maybe.value())) as Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }>;
+      return Maybe.from(maybeArray.map((maybe) => maybe.value())) as Result & { __state: 'resolved' };
     }
 
     const rejectedEntry = maybeArray.find((maybe) => maybe.isRejected());
@@ -101,7 +120,7 @@ export default class Maybe<T, E = unknown> {
       throw rejectedEntry;
     }
 
-    return Maybe.from(Promise.all(maybeArray.map((maybe) => maybe.promise()))) as Maybe<{ -readonly [P in keyof U]: Awaited<U[P]> }>;
+    return Maybe.from(Promise.all(maybeArray.map((maybe) => maybe.promise()))) as Result & { __state: 'pending' };
   }
 
   /**
