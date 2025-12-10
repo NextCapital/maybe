@@ -56,14 +56,16 @@ export default class Maybe<T, E = unknown> {
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
    */
-  static from<U, V = unknown>(thing: Maybe<U, V> & { __state: 'resolved' }): Maybe<U, V> & { __state: 'resolved' };
-  static from<U, V = unknown>(thing: Maybe<U, V> & { __state: 'rejected' }): Maybe<U, V> & { __state: 'rejected' };
-  static from<U, V = unknown>(thing: Maybe<U, V> & { __state: 'pending' }): Maybe<U, V> & { __state: 'pending' };
+  static from<U, V = unknown>(thing: { __value: U; __error: V; __state: 'resolved' }): Maybe<U, V> & { __state: 'resolved' };
+  static from<U, V = unknown>(thing: { __value: U; __error: V; __state: 'rejected' }): Maybe<U, V> & { __state: 'rejected' };
+  static from<U, V = unknown>(thing: { __value: U; __error: V; __state: 'pending' }): Maybe<U, V> & { __state: 'pending' };
   static from<U, V = unknown>(thing: Promise<U>): Maybe<U, V> & { __state: 'pending' };
   static from<U, V = unknown>(thing: U): Maybe<U, V> & { __state: 'resolved' };
-  static from<U, V = unknown>(thing: U | Promise<U> | Maybe<U, V>): Maybe<U, V> {
+  static from<U, V = unknown>(
+    thing: U | Promise<U> | Maybe<U, V> | (Maybe<any, any> & { __state: any })
+  ): Maybe<U, V> | (Maybe<any, any> & { __state: any }) {
     if (this.isMaybe(thing)) {
-      return thing;
+      return thing as any;
     }
 
     return new Maybe(thing);
