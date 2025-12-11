@@ -17,16 +17,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nextcapital/maybe.git"
+    "url": "git+https://github.com/NextCapital/maybe.git"
   },
   "author": {
     "name": "NextCapital Group",
     "url": "https://nextcapital.com"
   },
   "bugs": {
-    "url": "https://github.com/nextcapital/maybe/issues"
+    "url": "https://github.com/NextCapital/maybe/issues"
   },
-  "homepage": "https://github.com/nextcapital/maybe#readme",
+  "homepage": "https://github.com/NextCapital/maybe#readme",
   "scripts": {
     "build": "npm run clean && npm run tsc",
     "clean": "rm -rf dist",
