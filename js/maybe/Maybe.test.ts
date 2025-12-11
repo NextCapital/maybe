@@ -134,8 +134,14 @@ describe('Maybe', () => {
         ];
       });
 
-      test('returns a maybe for the first rejected value', () => {
-        const maybe = Maybe.all(array);
+      test('throws a maybe for the first rejected value', () => {
+        let maybe;
+        try {
+          maybe = Maybe.all(array);
+        } catch (ex) {
+          maybe = ex;
+        }
+
         expect(maybe.isRejected()).toBe(true);
         expect(maybe.valueOrError()).toBe(error);
       });
@@ -199,7 +205,7 @@ describe('Maybe', () => {
     describe('when a value', () => {
       describe('when an error', () => {
         test('creates a rejected maybe', () => {
-          const maybe = new Maybe(error, true);
+          const maybe = new Maybe(undefined, true, error);
           expect(maybe.isRejected()).toBe(true);
           expect(maybe.valueOrError()).toBe(error);
         });
