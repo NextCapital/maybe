@@ -1,18 +1,21 @@
-const PromiseUtils = require('../promise-utils/PromiseUtils');
-const PendingValueError = require('./PendingValueError');
-const Maybe = require('./Maybe');
+import PromiseUtils, { Deferred } from '../promise-utils/PromiseUtils.js';
+import PendingValueError from './PendingValueError.js';
+import Maybe from './Maybe.js';
 
 process.on('unhandledRejection', (error) => {
-  fail(error); // eslint-disable-line no-undef,jest/no-jasmine-globals
+  fail(error as Error); // eslint-disable-line no-undef,jest/no-jasmine-globals
 });
 
 describe('Maybe', () => {
-  let value, error, deferred, promise;
+  let value: number;
+  let error: Error;
+  let deferred: Deferred<number>;
+  let promise: Promise<number>;
 
   beforeEach(() => {
     value = 123;
     error = new Error('whoops');
-    deferred = PromiseUtils.defer();
+    deferred = PromiseUtils.defer<number>();
     promise = deferred.promise;
   });
 
@@ -41,7 +44,9 @@ describe('Maybe', () => {
   });
 
   describe('static build', () => {
-    let isReady, valueGetter, promiseGetter;
+    let isReady: boolean;
+    let valueGetter: jest.Mock<number>;
+    let promiseGetter: jest.Mock<Promise<number>>;
 
     beforeEach(() => {
       valueGetter = jest.fn().mockReturnValue(value);
@@ -102,7 +107,7 @@ describe('Maybe', () => {
   });
 
   describe('static all', () => {
-    let array;
+    let array: Array<number | Promise<number> | Maybe<number>>;
 
     describe('when all entries are resolved', () => {
       beforeEach(() => {
@@ -194,7 +199,7 @@ describe('Maybe', () => {
     describe('when a value', () => {
       describe('when an error', () => {
         test('creates a rejected maybe', () => {
-          const maybe = new Maybe(error, true);
+          const maybe = new Maybe(undefined, true, error);
           expect(maybe.isRejected()).toBe(true);
           expect(maybe.valueOrError()).toBe(error);
         });
@@ -485,7 +490,11 @@ describe('Maybe', () => {
   });
 
   describe('when', () => {
-    let onResolve, onReject, onProgress, resolvedValue, rejectedValue, maybe;
+    let onResolve: jest.Mock<string, [number]>;
+    let onReject: jest.Mock<string, [Error]>;
+    let resolvedValue: string;
+    let rejectedValue: string;
+    let maybe: Maybe<number>;
 
     beforeEach(() => {
       resolvedValue = 'resolved';
@@ -493,7 +502,6 @@ describe('Maybe', () => {
 
       onResolve = jest.fn().mockReturnValue(resolvedValue);
       onReject = jest.fn().mockReturnValue(rejectedValue);
-      onProgress = jest.fn();
     });
 
     describe('when resolved', () => {
@@ -573,7 +581,7 @@ describe('Maybe', () => {
 
       describe('after the promise resolves', () => {
         test('returns a pending maybe for the value', async () => {
-          const newMaybe = maybe.when(onResolve, onReject, onProgress);
+          const newMaybe = maybe.when(onResolve, onReject);
           expect(newMaybe).not.toBe(maybe);
           expect(newMaybe.isReady()).toBe(false);
 
@@ -585,7 +593,7 @@ describe('Maybe', () => {
 
       describe('after the promise rejects', () => {
         test('returns a pending maybe for the value', async () => {
-          const newMaybe = maybe.when(onResolve, onReject, onProgress);
+          const newMaybe = maybe.when(onResolve, onReject);
           expect(newMaybe).not.toBe(maybe);
           expect(newMaybe.isReady()).toBe(false);
 
@@ -598,7 +606,9 @@ describe('Maybe', () => {
   });
 
   describe('catch', () => {
-    let onReject, rejectedValue, maybe;
+    let onReject: jest.Mock<string, [Error]>;
+    let rejectedValue: string;
+    let maybe: Maybe<number>;
 
     beforeEach(() => {
       rejectedValue = 'rejected';
@@ -660,7 +670,9 @@ describe('Maybe', () => {
   });
 
   describe('finally', () => {
-    let onFinally, finallyValue, maybe;
+    let onFinally: jest.Mock<string>;
+    let finallyValue: string;
+    let maybe: Maybe<number>;
 
     beforeEach(() => {
       finallyValue = 'finally';
