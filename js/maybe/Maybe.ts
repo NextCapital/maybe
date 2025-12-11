@@ -1,6 +1,8 @@
 import PromiseUtils from '../promise-utils/PromiseUtils.js';
 import PendingValueError from './PendingValueError.js';
-import type { UnwrapAll, AllResolved, HasPending } from './MaybeTypes.js';
+import type {
+  UnwrapAll, AllResolved, HasRejected, FirstRejected, HasPending
+} from './MaybeTypes.js';
 
 /**
  * The `Maybe` class acts like a `Maybe` type in functional programming: but instead of being
@@ -140,7 +142,7 @@ export default class Maybe<T, E = unknown> {
    *
    * - If all entries are resolved Maybe instances, we will return a `Maybe` resolved to
    * an array of all resolved values.
-   * - If any entry has rejected, will throw a Maybe rejected to the first rejected value.
+   * - If any entry has rejected, will return a Maybe rejected to the first rejected value.
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
    * for the `promise()` for each input Maybe.
    *
@@ -149,20 +151,26 @@ export default class Maybe<T, E = unknown> {
    *    - Constraint: Raw values pass through, Maybes must be resolved, Promises become never
    *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' }
    *    - Use case: All inputs are synchronously ready, result is immediately available
-   * 2. HasPending<U> overload: Catch-all that matches when any Maybe is pending/rejected
-   *    - Constraint: Always matches (identity type), but only chosen if AllResolved fails
+   * 2. HasRejected<U> overload: Matches when at least one Maybe is rejected
+   *    - Constraint: At least one Maybe has __state: 'rejected'
+   *    - Returns: FirstRejected<U> (the first rejected Maybe)
+   *    - Use case: Returns rejected Maybe immediately without processing remaining inputs
+   * 3. HasPending<U> overload: Catch-all that matches when any Maybe is pending (but none rejected)
+   *    - Constraint: Always matches (identity type), but only chosen if AllResolved and HasRejected
+   *                  fail
    *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'pending' }
    *    - Use case: At least one input requires async resolution, result must be awaited
-   * 3. Generic overload: Fallback for edge cases
+   * 4. Generic overload: Fallback for edge cases
    *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' | 'pending' }.
    *
    * The `const` type parameter preserves literal types and tuple structure, and UnwrapAll<U>
    * extracts the inner value types from all Maybes, Promises, and raw values in the input array.
    */
   static all<const U extends readonly unknown[]>(array: AllResolved<U>): Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved'; };
+  static all<const U extends readonly unknown[]>(array: HasRejected<U>): FirstRejected<U>;
   static all<const U extends readonly unknown[]>(array: HasPending<U>): Maybe<UnwrapAll<U>, unknown> & { __state: 'pending'; };
   static all<const U extends readonly unknown[]>(array: U): Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' | 'pending'; };
-  static all<U extends readonly unknown[]>(array: U): Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' | 'pending'; } {
+  static all<const U extends readonly unknown[]>(array: U): Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' | 'pending'; } | FirstRejected<U> {
     // Convert array to maybes
     const maybeArray = array.map((thing) => Maybe.from(thing));
     const allResolved = maybeArray.every((maybe) => maybe.isResolved());
@@ -174,7 +182,7 @@ export default class Maybe<T, E = unknown> {
 
     const rejectedEntry = maybeArray.find((maybe) => maybe.isRejected());
     if (rejectedEntry) {
-      throw rejectedEntry;
+      return rejectedEntry as any; // eslint-disable-line @typescript-eslint/no-explicit-any
     }
 
     const promises = maybeArray.map((maybe) => maybe.promise());

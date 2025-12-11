@@ -134,14 +134,8 @@ describe('Maybe', () => {
         ];
       });
 
-      test('throws a maybe for the first rejected value', () => {
-        let maybe;
-        try {
-          maybe = Maybe.all(array);
-        } catch (ex) {
-          maybe = ex;
-        }
-
+      test('returns a maybe for the first rejected value', () => {
+        const maybe = Maybe.all(array);
         expect(maybe.isRejected()).toBe(true);
         expect(maybe.valueOrError()).toBe(error);
       });

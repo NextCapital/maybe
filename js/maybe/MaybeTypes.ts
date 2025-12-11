@@ -185,3 +185,63 @@ export type AllResolved<U extends readonly unknown[]> = {
  * ```
  */
 export type HasPending<U extends readonly unknown[]> = U;
+
+/**
+ * Helper type to check if an element is a rejected Maybe with __state intersection.
+ */
+type IsRejectedMaybe<T> = T extends { __state: 'rejected'; } ? true : false;
+
+/**
+ * Helper type to extract the first rejected Maybe from a tuple, or never if none exist.
+ */
+export type FirstRejected<U extends readonly unknown[]> =
+  U extends readonly [infer First, ...infer Rest]
+    ? IsRejectedMaybe<First> extends true
+      ? First
+      : FirstRejected<Rest>
+    : never;
+
+/**
+ * Constraint type for Maybe.all() that checks if any input Maybe is rejected.
+ *
+ * This type is used as an overload constraint to detect when at least one Maybe in the input
+ * has __state: 'rejected', allowing Maybe.all() to return that rejected Maybe immediately
+ * rather than attempting to resolve the array.
+ *
+ * The constraint is satisfied when:
+ * - At least one Maybe has __state: 'rejected'.
+ *
+ * The constraint is violated when:
+ * - No Maybes are rejected (all are resolved, pending, or raw values).
+ *
+ * When this constraint matches, FirstRejected<U> extracts the first rejected Maybe to use
+ * as the return type.
+ *
+ * @example
+ * ```typescript
+ * // ✅ Constraint satisfied - contains rejected Maybe
+ * type A = HasRejected<[
+ *   Maybe<number, string> & { __state: 'resolved' },
+ *   Maybe<number, string> & { __state: 'rejected' },
+ * ]>;
+ * // FirstRejected would extract: Maybe<number, string> & { __state: 'rejected' }
+ *
+ * // ❌ Constraint violated - no rejected Maybes
+ * type B = HasRejected<[
+ *   Maybe<number, unknown> & { __state: 'resolved' },
+ *   Maybe<string, unknown> & { __state: 'pending' },
+ * ]>;
+ * // FirstRejected would be: never
+ *
+ * // ✅ Constraint satisfied - multiple rejected, returns first
+ * type C = HasRejected<[
+ *   Maybe<number, Error> & { __state: 'rejected' },
+ *   Maybe<string, unknown> & { __state: 'resolved' },
+ *   Maybe<boolean, Error> & { __state: 'rejected' },
+ * ]>;
+ * // FirstRejected would extract: Maybe<number, Error> & { __state: 'rejected' }
+ * ```
+ */
+export type HasRejected<U extends readonly unknown[]> = FirstRejected<U> extends never ? never : U;
+
+/* eslint-enable @typescript-eslint/no-explicit-any, @stylistic/max-len */
