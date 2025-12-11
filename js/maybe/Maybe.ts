@@ -1,32 +1,6 @@
 import PromiseUtils from '../promise-utils/PromiseUtils.js';
 import PendingValueError from './PendingValueError.js';
-
-/* eslint-disable @typescript-eslint/no-explicit-any,no-use-before-define */
-export type UnwrapMaybe<T> = T extends Maybe<infer U, infer V>
-  ? U extends Maybe<any, any>
-    ? UnwrapMaybe<U>
-    : Maybe<U, V>
-  : T;
-
-// Extract value by accessing the public type brand
-type UnwrapValue<T> =
-  T extends Promise<infer V> ? V :
-    T extends { __value: infer V; __state: any; } ? V : // Has __state intersection - use __value
-      T extends Maybe<infer V, any> ? V : // Plain Maybe - use generic
-        T; // Raw value
-
-// Helper to unwrap all elements in a tuple/array
-type UnwrapAll<U extends readonly unknown[]> = { -readonly [P in keyof U]: UnwrapValue<U[P]> }; type AllResolved<U extends readonly unknown[]> = { // eslint-disable-line @stylistic/max-len
-  [K in keyof U]: U[K] extends Maybe<any, any>
-    ? (U[K] & { __state: 'resolved'; })
-    : U[K] extends Promise<any>
-      ? never // Promises make it pending, not resolved
-      : U[K]
-};
-
-// Identity type - no transformation
-type HasPending<U extends readonly unknown[]> = U;
-/* eslint-enable @typescript-eslint/no-explicit-any,no-use-before-define */
+import type { UnwrapAll, AllResolved, HasPending } from './MaybeTypes.js';
 
 /**
  * The `Maybe` class acts like a `Maybe` type in functional programming: but instead of being
@@ -48,16 +22,72 @@ export default class Maybe<T, E = unknown> {
 
   private _wrappedPromise: Promise<T> | null;
 
+  /**
+   * Phantom type property that exists only in TypeScript's type system, not in runtime JavaScript.
+   *
+   * This property enables type narrowing through intersection types, allowing TypeScript to track
+   * whether a Maybe is 'resolved', 'rejected', or 'pending' at the type level. When you call
+   * isResolved(), isRejected(), or isPending(), the return type includes an intersection like
+   * `Maybe<T, E> & { __state: 'resolved' }`, which narrows the type and enables type-safe access
+   * to methods like value().
+   *
+   * Despite being declared, this property is not emitted in the compiled JavaScript and has zero
+   * runtime cost. It's purely a compile-time type system feature.
+   */
   declare readonly __state: 'resolved' | 'rejected' | 'pending';
 
-  // Public type brand for extracting T from intersections
+  /**
+   * Phantom type brand property that exists only in TypeScript's type system, not in runtime
+   * JavaScript.
+   *
+   * This type brand enables extraction of the value type T from Maybe instances that have the
+   * __state intersection property. TypeScript's conditional types cannot extract generic type
+   * parameters from intersection types like `Maybe<T> & { __state: 'resolved' }` using the
+   * standard `infer` keyword. By adding this brand property, we can match against
+   * `{ __value: infer V }` to extract T even from intersections.
+   *
+   * Used by: UnwrapValue<T>, UnwrapAll<U>, and Maybe.from() overloads.
+   *
+   * Despite being declared, this property is not emitted in the compiled JavaScript and has zero
+   * runtime cost. It's purely a compile-time type system feature.
+   */
   declare readonly __value: T;
 
+  /**
+   * Phantom type brand property that exists only in TypeScript's type system, not in runtime
+   * JavaScript.
+   *
+   * This type brand enables extraction of the error type E from Maybe instances that have the
+   * __state intersection property. Similar to __value, this brand allows TypeScript's conditional
+   * types to extract the error type parameter from intersection types using pattern matching like
+   * `{ __error: infer Err }`.
+   *
+   * Used by: Maybe.from() overloads to preserve error types through state intersections.
+   *
+   * Despite being declared, this property is not emitted in the compiled JavaScript and has zero
+   * runtime cost. It's purely a compile-time type system feature.
+   */
   declare readonly __error: E;
 
   /**
    * Shortcut to the `Maybe` constructor, with the caveat that if `thing` is already a `Maybe`
    * instance, we'll just return `thing` as-is.
+   *
+   * The return type uses overload resolution to preserve the __state from input Maybe instances:
+   * 1. Resolved Maybe overload: Matches Maybe with __state: 'resolved' using __value/__error brands
+   *    Returns: Maybe<U, V> & { __state: 'resolved' }.
+   * 2. Rejected Maybe overload: Matches Maybe with __state: 'rejected' using __value/__error brands
+   *    Returns: Maybe<U, V> & { __state: 'rejected' }
+   * 3. Pending Maybe overload: Matches Maybe with __state: 'pending' using __value/__error brands
+   *    Returns: Maybe<U, V> & { __state: 'pending' }
+   * 4. Promise overload: Matches Promise<U> (always pending)
+   *    Returns: Maybe<U, V> & { __state: 'pending' }
+   * 5. Raw value overload: Matches any other value (always resolved)
+   *    Returns: Maybe<U, V> & { __state: 'resolved' }.
+   *
+   * The __value and __error type brands in overloads 1-3 enable TypeScript to extract generic
+   * type parameters from Maybe instances with __state intersections, which standard inference
+   * cannot handle.
    */
   static from<U, V = unknown>(thing: { __value: U; __error: V; __state: 'resolved'; }): Maybe<U, V> & { __state: 'resolved'; };
   static from<U, V = unknown>(thing: { __value: U; __error: V; __state: 'rejected'; }): Maybe<U, V> & { __state: 'rejected'; };
@@ -113,6 +143,21 @@ export default class Maybe<T, E = unknown> {
    * - If any entry has rejected, will throw a Maybe rejected to the first rejected value.
    * - Otherwise, will return a pending Maybe that will resolve the same as `Promise.all` would
    * for the `promise()` for each input Maybe.
+   *
+   * The return type uses overload resolution to narrow the __state based on input:
+   * 1. AllResolved<U> overload: Matches only when all Maybes have __state: 'resolved'
+   *    - Constraint: Raw values pass through, Maybes must be resolved, Promises become never
+   *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' }
+   *    - Use case: All inputs are synchronously ready, result is immediately available
+   * 2. HasPending<U> overload: Catch-all that matches when any Maybe is pending/rejected
+   *    - Constraint: Always matches (identity type), but only chosen if AllResolved fails
+   *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'pending' }
+   *    - Use case: At least one input requires async resolution, result must be awaited
+   * 3. Generic overload: Fallback for edge cases
+   *    - Returns: Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved' | 'pending' }.
+   *
+   * The `const` type parameter preserves literal types and tuple structure, and UnwrapAll<U>
+   * extracts the inner value types from all Maybes, Promises, and raw values in the input array.
    */
   static all<const U extends readonly unknown[]>(array: AllResolved<U>): Maybe<UnwrapAll<U>, unknown> & { __state: 'resolved'; };
   static all<const U extends readonly unknown[]>(array: HasPending<U>): Maybe<UnwrapAll<U>, unknown> & { __state: 'pending'; };
@@ -208,6 +253,16 @@ export default class Maybe<T, E = unknown> {
    *
    * Otherwise, this will throw a `PendingValueError`. Always be sure to gate code by `isReady`,
    * `isResolved`, or `isRejected` before calling `value`.
+   *
+   * The return type uses overload resolution based on the __state intersection:
+   * 1. Resolved overload: When __state is 'resolved', returns T
+   * 2. Rejected overload: When __state is 'rejected', returns never (will throw)
+   * 3. Pending overload: When __state is 'pending', returns never (will throw PendingValueError)
+   * 4. Generic overload: Fallback that returns T when state is unknown at compile time.
+   *
+   * These overloads ensure type safety: you can only access the value type T when TypeScript
+   * knows the Maybe is resolved through type narrowing (e.g., after an if (maybe.isResolved())
+   * check).
    */
   value(this: Maybe<T, E> & { __state: 'resolved'; }): T;
   value(this: Maybe<T, E> & { __state: 'rejected'; }): never;
@@ -245,6 +300,16 @@ export default class Maybe<T, E = unknown> {
    * or rejects to the resolved or rejected value.
    *
    * You can always convert a Maybe back to a promise!
+   *
+   * The return type uses overload resolution based on the __state intersection:
+   * 1. Resolved overload: When __state is 'resolved', returns Promise<T> (will resolve immediately)
+   * 2. Rejected overload: When __state is 'rejected', returns Promise<E> (will reject immediately)
+   * 3. Pending overload: When __state is 'pending', returns Promise<T> (will resolve when ready)
+   * 4. Generic overload: Fallback that returns Promise<T | E> when state is unknown at compile
+   *    time.
+   *
+   * These overloads enable better type inference when the state is known, particularly useful
+   * when catching rejected promises or awaiting pending values.
    */
   promise(this: Maybe<T, E> & { __state: 'resolved'; }): Promise<T>;
   promise(this: Maybe<T, E> & { __state: 'rejected'; }): Promise<E>;
@@ -280,6 +345,18 @@ export default class Maybe<T, E = unknown> {
    *
    * NOTE: We can't call this method `then`, as otherwise a Maybe instance would be considered
    * promise-alike, which we don't want.
+   *
+   * The return type uses extensive overload resolution to preserve type information based on:
+   * - The input Maybe's __state (resolved/rejected/pending/unknown)
+   * - Whether onResolve and/or onReject handlers are provided
+   * - The return type of each handler (TResult1 for onResolve, TResult2 for onReject).
+   *
+   * Key overload patterns:
+   * - No handlers: Returns the Maybe unchanged (with its current state preserved)
+   * - Pending input: Always returns pending Maybe (must wait for resolution)
+   * - Resolved input + onResolve: Returns resolved or rejected based on handler execution
+   * - Rejected input + onReject: Returns resolved or rejected based on handler execution
+   * - Both handlers: Return type is union of both possible outcomes.
    */
   when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'pending'; }): Maybe<TResult1, EResult> & { __state: 'pending'; };
   when<TResult1 = T, TResult2 = never, EResult = unknown>(this: Maybe<T, E> & { __state: 'resolved'; }): Maybe<T, E> & { __state: 'resolved'; };
@@ -367,6 +444,15 @@ export default class Maybe<T, E = unknown> {
    * - We'll throw the promise if we are still pending.
    *
    * This is intended for use with React suspense with data fetch.
+   *
+   * The return type uses overload resolution based on the __state intersection:
+   * 1. Resolved overload: When __state is 'resolved', returns T
+   * 2. Rejected overload: When __state is 'rejected', returns never (will throw error)
+   * 3. Pending overload: When __state is 'pending', returns never (will throw promise for Suspense)
+   * 4. Generic overload: Fallback that returns T when state is unknown at compile time.
+   *
+   * React Suspense will catch the thrown promise, suspend rendering, and retry once the
+   * promise resolves.
    */
   suspend(this: Maybe<T, E> & { __state: 'resolved'; }): T;
   suspend(this: Maybe<T, E> & { __state: 'rejected'; }): never;
