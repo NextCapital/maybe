@@ -4,6 +4,9 @@ on:
     branches:
       - main
 
+permissions:
+  id-token: write # Required for OIDC authentication
+
 jobs:
   test:
     name: Publish NPM Package
