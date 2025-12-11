@@ -39,8 +39,6 @@
     "tsc:test": "tsc --project tsconfig.test.json"
   },
   "devDependencies": {
-    "@babel/core": "^7.26.10",
-    "@babel/eslint-parser": "^7.27.0",
     "@nextcapital/eslint-config": "^0.1.6",
     "@nextcapital/eslint-config-typescript": "^0.1.8",
     "@types/jest": "^30.0.0",
