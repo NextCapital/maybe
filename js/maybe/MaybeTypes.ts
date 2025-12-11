@@ -192,14 +192,27 @@ export type HasPending<U extends readonly unknown[]> = U;
 type IsRejectedMaybe<T> = T extends { __state: 'rejected'; } ? true : false;
 
 /**
+ * Helper type to extract a rejected Maybe from a union type.
+ * If the union contains any rejected Maybe, returns that type.
+ */
+type ExtractRejectedFromUnion<T> = Extract<T, { __state: 'rejected'; }>;
+
+/**
  * Helper type to extract the first rejected Maybe from a tuple, or never if none exist.
+ * Also handles widened arrays by checking if the element union type includes rejected Maybes.
  */
 export type FirstRejected<U extends readonly unknown[]> =
-  U extends readonly [infer First, ...infer Rest]
-    ? IsRejectedMaybe<First> extends true
-      ? First
-      : FirstRejected<Rest>
-    : never;
+  // Handle widened arrays: (A | B | C)[]
+  U extends (infer Element)[]
+    ? ExtractRejectedFromUnion<Element> extends never
+      ? never
+      : ExtractRejectedFromUnion<Element>
+    // Handle tuples: [A, B, C]
+    : U extends readonly [infer First, ...infer Rest]
+      ? IsRejectedMaybe<First> extends true
+        ? First
+        : FirstRejected<Rest>
+      : never;
 
 /**
  * Constraint type for Maybe.all() that checks if any input Maybe is rejected.

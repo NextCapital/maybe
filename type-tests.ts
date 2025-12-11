@@ -429,11 +429,11 @@ const noConstRejected = [
 ];
 
 const noConstRejectedResult = Maybe.all(noConstRejected);
-// Without 'as const', the rejected Maybe is filtered from union, becomes pending
-// (because overload resolution can't match HasRejected with widened array)
+// Now correctly detects rejected Maybe even without 'as const'!
+// The enhanced FirstRejected type can extract rejected Maybes from widened union arrays
 type test28a = Expect<Equal<
   typeof noConstRejectedResult,
-  Maybe<(number | boolean)[], unknown> & { __state: 'pending' }
+  Maybe<undefined, string> & { __state: 'rejected' }
 >>;
 
 // ============================================================================
