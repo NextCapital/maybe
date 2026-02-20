@@ -1,5 +1,7 @@
 # Migration Guide: v1.x to v2.0
 
+<!-- markdownlint-disable MD024 -->
+
 This guide outlines the breaking changes introduced in v2.0 and provides guidance for migrating your code.
 
 ## Overview
@@ -13,6 +15,7 @@ Version 2.0 represents a major overhaul of the `@nextcapital/maybe` package, mig
 ### 1. **TypeScript Migration & ES Modules**
 
 #### What Changed
+
 - The package is now written in TypeScript and distributed as compiled JavaScript with TypeScript declaration files
 - Changed from CommonJS (`require`/`module.exports`) to ES Modules (`import`/`export`)
 - Main entry point changed from `js/index.js` to `dist/index.js`
@@ -22,16 +25,19 @@ Version 2.0 represents a major overhaul of the `@nextcapital/maybe` package, mig
 #### Migration Required
 
 **Before (v1.x) - CommonJS:**
+
 ```javascript
 const { Maybe, AsyncQueue, PromiseUtils } = require('@nextcapital/maybe');
 ```
 
 **After (v2.0) - ES Modules:**
+
 ```javascript
 import { Maybe, AsyncQueue, PromiseUtils } from '@nextcapital/maybe';
 ```
 
 **TypeScript users:**
+
 ```typescript
 // Named imports
 import { Maybe, AsyncQueue, PromiseUtils, PendingValueError } from '@nextcapital/maybe';
@@ -57,14 +63,17 @@ import Maybe from '@nextcapital/maybe/dist/maybe/Maybe.js';
 ### 2. **Constructor Signature Change**
 
 #### What Changed
+
 The `Maybe` constructor now accepts an optional third parameter `error` for creating rejected instances.
 
 **Before (v1.x):**
+
 ```javascript
 constructor(thing, isError = false)
 ```
 
 **After (v2.0):**
+
 ```typescript
 constructor(thing: T | Promise<T> | Maybe<T, E>, isError = false, error?: E)
 ```
@@ -74,12 +83,14 @@ constructor(thing: T | Promise<T> | Maybe<T, E>, isError = false, error?: E)
 If you're directly calling `new Maybe()` to create rejected instances:
 
 **Before (v1.x):**
+
 ```javascript
 // Creating rejected Maybe - error is the first parameter
 const rejected = new Maybe(errorValue, true);
 ```
 
 **After (v2.0):**
+
 ```typescript
 // Creating rejected Maybe - error is the third parameter
 const rejected = new Maybe(undefined, true, errorValue);
@@ -97,9 +108,11 @@ const rejected = Maybe.fromError(errorValue);
 ### 3. **Enhanced Type Safety with Phantom Types (TypeScript Only)**
 
 #### What Changed
+
 The `Maybe` class now includes three phantom type properties (`__state`, `__value`, `__error`) that exist only in TypeScript's type system to enable precise type narrowing based on the Maybe's state.
 
 These properties:
+
 - Do NOT exist at runtime (zero runtime cost)
 - Are NOT present in compiled JavaScript
 - Only affect TypeScript's type checking and inference
@@ -109,6 +122,7 @@ These properties:
 **No migration required** - this is purely additive for TypeScript users and invisible to JavaScript users.
 
 **TypeScript Benefits:**
+
 ```typescript
 const maybe = Maybe.from(42);
 
@@ -128,6 +142,7 @@ if (pending.isPending()) {
 ```
 
 **Impact:**
+
 - TypeScript users get significantly better autocomplete and type checking
 - Code that previously needed type assertions may no longer need them
 - No changes required for JavaScript users
@@ -137,6 +152,7 @@ if (pending.isPending()) {
 ### 4. **Improved `Maybe.all()` Type Inference**
 
 #### What Changed
+
 `Maybe.all()` now uses sophisticated type inference to narrow the return type based on the input array's state:
 
 1. **All resolved** → Returns `Maybe<[...types], unknown> & { __state: 'resolved' }`
@@ -150,6 +166,7 @@ if (pending.isPending()) {
 **No migration required** - runtime behavior is identical to v1.x.
 
 **TypeScript Benefits:**
+
 ```typescript
 // Example 1: All resolved - type system knows it's resolved
 const m1 = Maybe.from(1);
@@ -180,9 +197,11 @@ result3.promise().then(values => console.log(values));
 ### 5. **Improved `Maybe.from()` Type Preservation**
 
 #### What Changed
+
 `Maybe.from()` now correctly preserves type information when wrapping existing `Maybe` instances, including their state.
 
 **Before (v2.0 early development):**
+
 ```typescript
 const innerMaybe = Maybe.from(42);
 const outerMaybe = Maybe.from(innerMaybe);
@@ -190,6 +209,7 @@ const outerMaybe = Maybe.from(innerMaybe);
 ```
 
 **After (v2.0 final):**
+
 ```typescript
 const innerMaybe = Maybe.from(42);
 const outerMaybe = Maybe.from(innerMaybe);
@@ -207,6 +227,7 @@ const outerMaybe = Maybe.from(innerMaybe);
 ### 6. **Error Type Parameter Default**
 
 #### What Changed
+
 The error type parameter `E` in `Maybe<T, E>` now explicitly defaults to `unknown` instead of being implicit.
 
 #### Migration Required
@@ -214,6 +235,7 @@ The error type parameter `E` in `Maybe<T, E>` now explicitly defaults to `unknow
 Minimal migration needed. If you have explicit type annotations:
 
 **Before (v1.x):**
+
 ```typescript
 function process(maybe: Maybe<number>): void {
   // Error type was implicit/any
@@ -221,6 +243,7 @@ function process(maybe: Maybe<number>): void {
 ```
 
 **After (v2.0):**
+
 ```typescript
 function process(maybe: Maybe<number>): void {
   // Error type is now explicitly unknown
@@ -235,6 +258,7 @@ function process(maybe: Maybe<number>): void {
 ### 7. **Build Artifacts & Distribution**
 
 #### What Changed
+
 - Package now ships compiled JavaScript in `dist/` folder
 - TypeScript source files are NOT included in the published package
 - Declaration files (`.d.ts`) are generated and included in `dist/`
@@ -255,6 +279,7 @@ function process(maybe: Maybe<number>): void {
 ### 8. **Node.js Version Requirements**
 
 #### What Changed
+
 - Package now requires Node.js version that supports ES Modules
 - Compiled to ES2020 target (check `tsconfig.json` for specifics)
 
@@ -269,16 +294,21 @@ Ensure your Node.js version meets the minimum requirements. Check `engines` fiel
 ## Non-Breaking Changes (Improvements)
 
 ### Comprehensive Type Definitions
+
 All classes and methods now have complete TypeScript type definitions with:
+
 - Generic type parameters properly constrained
 - Overload signatures for precise type narrowing
 - JSDoc comments with examples
 
 ### Better Error Types
+
 Error types are now properly tracked through the type system using the `E` type parameter.
 
 ### Exported Types
+
 Additional types are now exported for advanced use cases:
+
 ```typescript
 import type { Deferred } from '@nextcapital/maybe';
 ```

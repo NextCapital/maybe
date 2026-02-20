@@ -45,7 +45,7 @@ For all contributions, please follow these steps:
 
 The DCO requires a sign-off message in the following format appear on each commit in the pull request:
 
-```
+```text
 Signed-off-by: Mike Kreiser <kreiserm@nextcapital.com>
 ```
 
@@ -76,7 +76,7 @@ Contributors:
 
 ## Code, commit message, and labeling conventions
 
-### Preferred style for code:
+### Preferred style for code
 
 Eslint is used for checking code style. You can run `npm run lint` locally to verify. Some important mentions include:
 
@@ -84,17 +84,18 @@ Eslint is used for checking code style. You can run `npm run lint` locally to ve
 2. Use camelCase for all variables and file names
 3. Avoid underscores as word separators
 
-### Commit message conventions:
+### Commit message conventions
 
 While rebasing and merging both integrate changes from one branch to another, we prefer the rebase style. This moves the feature branch into main, rather than adding a new commit, simplifying the review process.
 
 #### Regularly add and commit your work to your branch
 
+<!-- markdownlint-disable-next-line MD036 -->
 **Unstaged (i.e. un-added) work cannot be recovered if overwritten**
 
 1. `git add -p`
 2. `git commit -m "Concise but descriptive commit message" -s`
-   * [Writing a Good Commit Message](https://chris.beams.io/posts/git-commit/)
+   - [Writing a Good Commit Message](https://chris.beams.io/posts/git-commit/)
 3. `git push`
 
 #### Fixing up a commit
@@ -108,7 +109,7 @@ Per best practices, we should not have "Fix lint", "Add *PR* feedback", etc., co
 
 See [Git Tools - Rewriting History](https://git-scm.com/book/en/v2/Git-Tools-Rewriting-History) for more on rebasing and using interactive mode.
 
-### Labeling conventions for issues:
+### Labeling conventions for issues
 
 1. bug report: when you find something that isn’t working properly
 2. dependency: when you update a dependency file
