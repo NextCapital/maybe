@@ -10,11 +10,11 @@ This project is written in TypeScript and contains three main exports:
 
 This code should run equally well on both client and server.
 
-## Maybe
+## Maybe Usage
 
 ### Installation
 
-```
+```bash
 npm install --save @nextcapital/maybe
 ```
 
@@ -29,6 +29,7 @@ error synchronously. The `Maybe` class allows you to do to both. This allows us 
 synchronously on data if possible, and wait for it easily if not.
 
 ### API
+
 Probably best to refer to the [in-code documentation](./js/maybe/Maybe.ts). The main methods are:
 
 - `Maybe.from(value)` - Converts `value` to a `Maybe` instance if it is not already
@@ -50,6 +51,7 @@ Probably best to refer to the [in-code documentation](./js/maybe/Maybe.ts). The 
   satisfies the React 18 suspense contract.
 
 ### Maybe May Not Resolve/Reject in the Same Tick
+
 You should always `await` the result of `maybe.promise()`, rather than the promise that the
 maybe was created from, before attempting to synchronously access the maybe's value.
 
@@ -59,6 +61,7 @@ several ticks after the original promise resolves for the maybe instance to adop
 This behavior is intrinsic to promises and cannot be fixed. However, this shouldn't be a major issue: simply await the maybe instead of the promise when a reference to both the promise and the maybe exists.
 
 ### Async/Await Caveats
+
 You should not attempt to return a `Maybe` instance from an `async` function. All `async`
 functions return a `Promise`, so in practice you will return a promise resolved to a maybe instance.
 
@@ -213,6 +216,7 @@ previous completes.
 Notably, the `Maybe` library on its own does not resolve the need to hook into React 18's still-nebulous caching system for suspense with data fetch. Once more details are released about this from the React team, we'll update these examples.
 
 ## PromiseUtils
+
 The `PromiseUtils` object contains a set of nifty helper functions. See the [full docs](./js/promise-utils/PromiseUtils.ts) for full details. Here is the gist:
 
 - `defer` - Returns a pending promise alongside methods to resolve or reject it.
@@ -222,11 +226,13 @@ The `PromiseUtils` object contains a set of nifty helper functions. See the [ful
 - `timeout(time)` - Returns a promise that resolves after the given time
 
 ## AsyncQueue
+
 The `AsyncQueue` class allows running async tasks against a queue with a maximum concurrency. If the max concurrency is reached, tasks will be queued until capacity is available. See the [full docs](./js/async-queue/AsyncQueue.ts) for more.
 
 The main method here is `perform(task)`, where `task` is a method that returns a promise when called. This will return a promise that resolves/rejects with the same value as the promise returned from `task`.
 
 ## PeerDependencies
+
 Since `Maybe.isMaybe` is merely doing an `instanceof` check under the hood, it is important that your app only has one instance of the `Maybe` library inside of it. To this end, we
 recommend:
 
@@ -234,10 +240,11 @@ recommend:
 - Installing as a `peerDependencies` in all other cases. If using `npm < 7`, you may want to install as a `devDependencies` as well.
 
 ### Webpack/Linking Considerations
+
 If you have multiple nested libraries that use `Maybe` as a `peerDepeneency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
 on your webpack config:
 
-```
+```javascript
 {
   resolve: {
     alias: {
@@ -254,4 +261,3 @@ This will force webpack to use the top-level package for the linked module. See 
 ## Contributing to Maybe
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)
-
