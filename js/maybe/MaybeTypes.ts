@@ -16,11 +16,11 @@ import type Maybe from './Maybe.js';
  * type D = UnwrapMaybe<Promise<number>>;                         // Promise<number>
  * ```
  */
-export type UnwrapMaybe<T> = T extends Maybe<infer U, infer V>
-  ? U extends Maybe<any, any>
-    ? UnwrapMaybe<U>
-    : Maybe<U, V>
-  : T;
+export type UnwrapMaybe<T> = T extends Maybe<infer U, infer V> ?
+  U extends Maybe<any, any> ?
+    UnwrapMaybe<U> :
+    Maybe<U, V> :
+  T;
 
 /**
  * Extracts the inner value type from a Maybe, Promise, or raw value.
@@ -136,11 +136,11 @@ export type UnwrapAll<U extends readonly unknown[]> = { -readonly [P in keyof U]
  * ```
  */
 export type AllResolved<U extends readonly unknown[]> = {
-  [K in keyof U]: U[K] extends Maybe<any, any>
-    ? (U[K] & { __state: 'resolved'; })
-    : U[K] extends Promise<any>
-      ? never // Promises make it pending, not resolved
-      : U[K]
+  [K in keyof U]: U[K] extends Maybe<any, any> ?
+    (U[K] & { __state: 'resolved'; }) :
+    U[K] extends Promise<any> ?
+      never : // Promises make it pending, not resolved
+      U[K]
 };
 
 /**
@@ -203,16 +203,16 @@ type ExtractRejectedFromUnion<T> = Extract<T, { __state: 'rejected'; }>;
  */
 export type FirstRejected<U extends readonly unknown[]> =
   // Handle widened arrays: (A | B | C)[]
-  U extends (infer Element)[]
-    ? ExtractRejectedFromUnion<Element> extends never
-      ? never
-      : ExtractRejectedFromUnion<Element>
+  U extends (infer Element)[] ?
+    ExtractRejectedFromUnion<Element> extends never ?
+      never :
+      ExtractRejectedFromUnion<Element> :
     // Handle tuples: [A, B, C]
-    : U extends readonly [infer First, ...infer Rest]
-      ? IsRejectedMaybe<First> extends true
-        ? First
-        : FirstRejected<Rest>
-      : never;
+    U extends readonly [infer First, ...infer Rest] ?
+      IsRejectedMaybe<First> extends true ?
+        First :
+        FirstRejected<Rest> :
+      never;
 
 /**
  * Constraint type for Maybe.all() that checks if any input Maybe is rejected.
