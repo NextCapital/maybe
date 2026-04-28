@@ -258,6 +258,10 @@ on your webpack config:
 
 This will force webpack to use the top-level package for the linked module. See [this post](https://medium.com/@penx/managing-dependencies-in-a-node-package-so-that-they-are-compatible-with-npm-link-61befa5aaca7) for more.
 
+## Deep-Dive Documentation
+
+The [`.github/docs/`](.github/docs/README.md) directory contains detailed architecture and design documentation targeted at developers and AI agents. It covers component deep-dives, type system internals, data flow diagrams, and onboarding guides.
+
 ## Contributing to Maybe
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)
