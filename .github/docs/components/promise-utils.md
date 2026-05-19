@@ -67,17 +67,7 @@ await PromiseUtils.timeout(1000);
 
 ## `Deferred<T>` Interface
 
-Bundles a promise with its externalized `resolve`/`reject` handles. Exported as a named type from the package entry point.
-
-```typescript
-export interface Deferred<T> {
-  promise: Promise<T>;
-  resolve: (value: T) => void;
-  reject: (error: unknown) => void;
-}
-```
-
-Primary use cases: `AsyncQueue` task management and unit testing with controllable promises.
+Bundles a promise with its externalized `resolve`/`reject` handles. Exported as a named type from the package entry point. Primary use cases: `AsyncQueue` task management and unit testing with controllable promises.
 
 ## Related Documentation
 

@@ -138,4 +138,4 @@ For full details on each pattern, see:
 
 - [Maybe Component Docs](../components/maybe.md) — full API and behavior
 - [Chaining Flow](../flows/chaining.md) — detailed chaining patterns
-- [React Suspense Guide](../flows/react-suspense.md) — Suspense integration
+- [React Suspense Guide](../guides/react-suspense.md) — Suspense integration

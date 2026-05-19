@@ -1,7 +1,5 @@
 # MaybeTypes — Type Utilities
 
-## Overview
-
 TypeScript cannot extract generic type parameters from intersection types using standard `infer`. When `Maybe.from()` returns `Maybe<number, unknown> & { __state: 'resolved' }`, a conditional type like `T extends Maybe<infer V, any> ? V : T` fails — TypeScript sees the intersection as a single opaque type.
 
 `MaybeTypes.ts` provides utility types that solve this. Every type is compile-time only (`import type`) and powers the overloaded signatures on `Maybe.from()` and `Maybe.all()`. Zero runtime cost.
@@ -79,12 +77,12 @@ static all<const U extends readonly unknown[]>(
 ): Maybe<UnwrapAll<U>, unknown> & { __state: 'pending' };
 ```
 
-| Input state | Selected overload | Return type |
-|---|---|---|
-| All Maybes resolved, no Promises | Overload 1 | `Maybe<UnwrapAll<U>> & { __state: 'resolved' }` |
-| At least one rejected | Overload 2 | `FirstRejected<U>` |
-| At least one pending, none rejected | Overload 3 | `Maybe<UnwrapAll<U>> & { __state: 'pending' }` |
-| Raw values only (no Maybes) | Overload 1 | `Maybe<UnwrapAll<U>> & { __state: 'resolved' }` |
+| Input state | Return type |
+|---|---|
+| All Maybes resolved, no Promises | `Maybe<UnwrapAll<U>> & { __state: 'resolved' }` |
+| At least one rejected | `FirstRejected<U>` |
+| At least one pending, none rejected | `Maybe<UnwrapAll<U>> & { __state: 'pending' }` |
+| Raw values only (no Maybes) | `Maybe<UnwrapAll<U>> & { __state: 'resolved' }` |
 
 ## How Maybe.from() Uses These Types
 
@@ -122,27 +120,3 @@ The `Maybe` class declares phantom brand properties (`__state`, `__value`, `__er
 - [Maybe](maybe.md) — the class that consumes these types
 - [Type System Guide](../guides/type-system.md) — phantom brand pattern and type narrowing
 - [type-tests.ts](../../../type-tests.ts) — compile-time type assertions
-
-## Evidence
-
-All claims in this document are sourced from:
-
-| File | What it establishes |
-|---|---|---|
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 1 | `import type` — compile-time only |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 20–24 | `UnwrapMaybe` definition |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 44–48 | `UnwrapValue` definition with `__value` brand branch |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 87 | `UnwrapAll` mapped type |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 131–136 | `AllResolved` constraint with `never` for Promises |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 179 | `HasPending` identity type |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 181–183 | `IsRejectedMaybe` and `ExtractRejectedFromUnion` helpers |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 196–205 | `FirstRejected` two-branch conditional |
-| [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) | 248 | `HasRejected` wrapping `FirstRejected` |
-| [Maybe.ts](../../../js/maybe/Maybe.ts) | 4–5 | Import of `UnwrapAll`, `AllResolved`, `HasRejected`, `FirstRejected`, `HasPending` |
-| [Maybe.ts](../../../js/maybe/Maybe.ts) | 38–68 | Phantom brand declarations (`__state`, `__value`, `__error`) |
-| [Maybe.ts](../../../js/maybe/Maybe.ts) | 88–96 | `Maybe.from()` overloads using brand-based matching |
-| [Maybe.ts](../../../js/maybe/Maybe.ts) | 156–162 | `Maybe.all()` overloads using constraint types |
-| [type-tests.ts](../../../type-tests.ts) | 30–31 | Test 1: `Maybe.from()` with raw values |
-| [type-tests.ts](../../../type-tests.ts) | 49–50 | Test 2: `Maybe.from()` with Promises |
-| [type-tests.ts](../../../type-tests.ts) | 66–76 | Test 4: `Maybe.from()` preserves state of existing Maybes |
-| [type-tests.ts](../../../type-tests.ts) | 139–200 | Tests 8–11: `Maybe.all()` overload resolution scenarios |

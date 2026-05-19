@@ -64,15 +64,15 @@ Types from `MaybeTypes.ts` and the `Deferred` interface from `PromiseUtils.ts` m
 
 - **100% coverage** is required across all metrics
 - Tests are colocated with source files (e.g., `Maybe.test.ts` next to `Maybe.ts`)
-- Use `PromiseUtils.defer()` for controlling async flow in tests — creates a promise you
-  can resolve/reject manually
+- Use `PromiseUtils.defer()` for controlling async flow in tests
 - Run tests: `npm run test`
+- See [Testing Patterns](.github/docs/guides/testing.md) for conventions and patterns
 
 ### TypeScript
 
 - Strict mode is enabled
-- Type-level tests live in `type-tests.ts` and are validated with
-  `npm run test:types`
+- Type-level tests live in `type-tests.ts` and are validated with `npm run test:types`
+- See [Type System Guide](.github/docs/guides/type-system.md) for phantom types, overloads, and narrowing
 
 ### Full CI check
 
@@ -88,70 +88,54 @@ This runs: lint → test → tsc → tsc:test.
 
 ### New Method on Maybe
 
-1. **Add the method to `js/maybe/Maybe.ts`** with overload signatures for each state:
-   - Resolved: `this: Maybe<T, E> & { __state: 'resolved' }`
-   - Rejected: `this: Maybe<T, E> & { __state: 'rejected' }`
-   - Pending: `this: Maybe<T, E> & { __state: 'pending' }`
-   - Generic (no state narrowing): plain `this`
-2. **Add type predicates** if the method narrows state (return `this is Maybe<T, E> & { __state: 'resolved' }`).
-3. **Add JSDoc comment** on the method. JSDoc is enforced by ESLint (`jsdoc/require-jsdoc`), though `require-param` and `require-returns` are disabled.
-4. **Add tests in `js/maybe/Maybe.test.ts`** with nested `describe` blocks covering each state (resolved, rejected, pending) × each behavior path.
-5. **Add type tests in `type-tests.ts`** using the `Expect<Equal<...>>` pattern. This file is validated by `npm run test:types`, not Jest.
-6. **Run `npm run ci:local`** and confirm everything passes.
+1. Add the method to `js/maybe/Maybe.ts` with overload signatures for each state (resolved, rejected, pending, generic). See [Type System Guide](.github/docs/guides/type-system.md#adding-new-type-narrowed-methods) for the overload pattern.
+2. Add type predicates if the method narrows state.
+3. Add JSDoc comment (enforced by ESLint).
+4. Add tests in `js/maybe/Maybe.test.ts` with nested `describe` blocks covering each state × behavior path. See [Testing Patterns](.github/docs/guides/testing.md).
+5. Add type tests in `type-tests.ts` using the `Expect<Equal<...>>` pattern.
+6. Run `npm run ci:local`.
 
 ### New Method on PromiseUtils
 
-1. **Add the method to the `PromiseUtils` object literal** in `js/promise-utils/PromiseUtils.ts`. Do not create a class — `PromiseUtils` is a plain object.
-2. **Add a JSDoc comment** on the method.
-3. **Add tests in `js/promise-utils/PromiseUtils.test.ts`.**
-4. **If the method introduces a new type**, export it as a named type from `PromiseUtils.ts` and re-export it from `js/index.ts` using `export type { ... }`.
-5. **Run `npm run ci:local`.**
+1. Add the method to the `PromiseUtils` object literal in `js/promise-utils/PromiseUtils.ts`. Do not create a class.
+2. Add a JSDoc comment.
+3. Add tests in `js/promise-utils/PromiseUtils.test.ts`.
+4. If the method introduces a new type, export it as a named type and re-export from `js/index.ts`.
+5. Run `npm run ci:local`.
 
 ### New Module
 
-1. **Create the source file:** `js/<module-name>/<ModuleName>.ts` with a `export default` class or object.
-2. **Create the test file:** `js/<module-name>/<ModuleName>.test.ts`.
-3. **Add the re-export** in `js/index.ts`:
-
-   ```typescript
-   export { default as ModuleName } from './<module-name>/ModuleName.js';
-   ```
-
-4. **Run `npm run ci:local`.**
+1. Create `js/<module-name>/<ModuleName>.ts` with `export default`.
+2. Create `js/<module-name>/<ModuleName>.test.ts`.
+3. Add re-export in `js/index.ts`.
+4. Run `npm run ci:local`.
 
 ## Type System Rules
 
-### Phantom Types
+`Maybe` uses phantom type properties, type predicates, and method overloads for compile-time state narrowing. See [Type System Guide](.github/docs/guides/type-system.md) for full details and [MaybeTypes](.github/docs/components/maybe-types.md) for utility type documentation.
 
-`Maybe` uses three `declare readonly` phantom properties (`__state`, `__value`, `__error`) that exist only at compile time with zero runtime cost. They enable type narrowing via intersection types and type brand extraction. Do not attempt to read or write these properties at runtime.
+Key rules for working with the type system:
 
-### Method Overloads
+- Phantom properties (`__state`, `__value`, `__error`) are compile-time only — never read or write at runtime
+- Overloads are ordered most-specific to least-specific; implementation signatures use intentional `as any` casts
+- All types in `MaybeTypes.ts` must use `import type` — no runtime code in that file
 
-Core methods like `when()`, `from()`, and `all()` use extensive overload signatures:
+## Documentation Routing
 
-- `when()` has 16+ overloads covering all combinations of state-narrowed and generic `this` with different handler combinations.
-- `from()` has 5 overloads: resolved Maybe, rejected Maybe, pending Maybe, `Promise<T>`, and raw value.
-- `all()` has 4 overloads for different tuple/array inputs.
-
-**When adding overloads:**
-
-- Follow the pattern of existing overloads in the same method.
-- The implementation signature (the final one) uses `as any` casts to bridge between the overload return types. This is intentional — do not remove these casts.
-- Order overloads from most specific to least specific. TypeScript resolves to the first matching overload.
-
-### Type Utility Types
-
-All type utilities live in `js/maybe/MaybeTypes.ts`:
-
-- `UnwrapMaybe<T>` — Recursively unwraps nested `Maybe` types.
-- `UnwrapValue<T>` — Extracts inner value type from `Maybe`, `Promise`, or raw value.
-- `UnwrapAll<U>` — Maps a tuple of `Maybe`/`Promise`/raw values to their inner types.
-- `AllResolved<U>` — Constraint type: satisfied when all Maybes are resolved and no Promises present.
-- `HasRejected<U>` — Constraint type: satisfied when at least one element is a rejected `Maybe`.
-- `FirstRejected<U>` — Extracts the first rejected `Maybe` from a tuple or widened array.
-- `HasPending<U>` — Identity type (always matches). Catch-all overload for `Maybe.all()`.
-
-Import these with `import type` only — they contain no runtime code.
+| Task | Start here |
+| --- | --- |
+| Understand Maybe API, state model, or chaining | [Maybe](.github/docs/components/maybe.md) |
+| Understand PromiseUtils methods | [PromiseUtils](.github/docs/components/promise-utils.md) |
+| Understand AsyncQueue | [AsyncQueue](.github/docs/components/async-queue.md) |
+| Understand phantom types, overloads, or type narrowing | [Type System Guide](.github/docs/guides/type-system.md) |
+| Understand `MaybeTypes.ts` utility types | [MaybeTypes](.github/docs/components/maybe-types.md) |
+| Write or modify tests | [Testing Patterns](.github/docs/guides/testing.md) |
+| Integrate Maybe with React Suspense | [React Suspense Guide](.github/docs/guides/react-suspense.md) |
+| Onboard to the codebase | [Getting Started](.github/docs/onboarding/getting-started.md) |
+| Look up a proprietary term | [Glossary](.github/docs/onboarding/glossary.md) |
+| Understand state transition timing | [Maybe Lifecycle](.github/docs/flows/maybe-lifecycle.md) |
+| Understand `when()`/`catch()`/`finally()` dispatch | [Chaining Flow](.github/docs/flows/chaining.md) |
+| Architecture overview and design decisions | [Architecture README](.github/docs/README.md) |
 
 ## Common Mistakes
 

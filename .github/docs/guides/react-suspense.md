@@ -1,7 +1,5 @@
 # React Suspense Integration
 
-## Overview
-
 React Suspense expects components to signal loading by throwing promises during render. [Maybe](../components/maybe.md)'s `suspend()` method implements this contract: returns the value if resolved, throws the error if rejected, or throws the promise if pending. React suspends the component, shows a fallback, and re-renders on settlement.
 
 Without Maybe, naive Suspense data fetching creates sequential waterfalls — each pending fetch suspends, and the next starts only on re-render. `Maybe.all()` + `suspend()` eliminates this by starting all fetches immediately and throwing a single composite promise.
@@ -191,18 +189,6 @@ component -> react: "render output"
 ## Related Documentation
 
 - [Maybe](../components/maybe.md) — Core Maybe class documentation
-- [PendingValueError](../components/pending-value-error.md) — Error thrown by `value()` when pending (distinct from `suspend()`, which throws the promise instead)
+- [Maybe — Value Access](../components/maybe.md#value-access) — `PendingValueError` thrown by `value()` when pending (distinct from `suspend()`, which throws the promise instead)
 - [Maybe Lifecycle](maybe-lifecycle.md) — State model and transitions
 - [Chaining](chaining.md) — `when()`, `catch()`, `finally()` flow
-
-## Documentation Coverage Summary
-
-| Metric | Value |
-| --- |
-| **Areas Documented** | 7 sections with full coverage |
-| **Areas Partially Covered** |
-| **Areas Unknown** |
-| **Total Evidence Citations** | 11 file paths cited across all Evidence blocks |
-| **Total UNVERIFIED Markers** |
-| **Confidence Distribution** | HIGH: 7 |
-| **Coverage Scan Status** | 7/7 sections Clear |

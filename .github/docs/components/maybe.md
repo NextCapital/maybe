@@ -1,6 +1,6 @@
 # Maybe
 
-Synchronous-first wrapper around values that _might_ be promises. If data is ready, act on it immediately. If not, wait — using the same API either way.
+Synchronous-first wrapper around values that might be promises. If data is ready, act on it immediately. If not, wait — using the same API either way.
 
 Three states:
 
@@ -59,13 +59,9 @@ All four methods return type predicates that narrow the phantom `__state`.
 | `isResolved()` | resolved with a value | `{ __state: 'resolved' }` |
 | `isRejected()` | rejected with an error | `{ __state: 'rejected' }` |
 
-```typescript
-if (maybe.isResolved()) {
-  console.log(maybe.value()); // T — safe after narrowing
-}
-```
-
 ## Value Access
+
+`PendingValueError` is a custom `Error` subclass thrown by `value()` and `valueOrError()` when the Maybe is still pending. It enables targeted `catch` handling to distinguish "value not available yet" from other runtime errors. `suspend()` throws the **promise** instead (for React Suspense), not a `PendingValueError`.
 
 ### `value()`
 
@@ -73,7 +69,7 @@ Returns the resolved value `T`:
 
 - **resolved** → returns `T`
 - **rejected** → throws the stored error
-- **pending** → throws [PendingValueError](pending-value-error.md)
+- **pending** → throws `PendingValueError`
 
 Always check state before calling `value()`. The overloads enforce this at the type level: calling `value()` on a pending Maybe returns `never`.
 
@@ -85,7 +81,7 @@ if (maybe.isResolved()) {
 
 ### `valueOrError()`
 
-Like `value()`, but returns the error instead of throwing it when rejected. Still throws [PendingValueError](pending-value-error.md) when pending.
+Like `value()`, but returns the error instead of throwing it when rejected. Still throws `PendingValueError` when pending.
 
 - **resolved** → returns `T`
 - **rejected** → returns `E`
@@ -120,7 +116,9 @@ The Maybe equivalent of `Promise.then()`. Named `when` (not `then`) to prevent J
 | rejected | — | no | Returns same instance unchanged |
 | pending | either | either | Delegates to `_wrappedPromise.then(onResolve, onReject)` |
 
-If a handler throws, the error is caught and wrapped via `Maybe.fromError()`.
+If a handler throws, the error is caught and wrapped via `Maybe.fromError()`. Errors never escape the chain.
+
+The handler's return type determines the resulting Maybe's state: raw values produce resolved Maybes, Promises produce pending Maybes, and existing Maybes pass through unchanged.
 
 ```typescript
 const result = maybe
@@ -131,7 +129,24 @@ const result = maybe
   );
 ```
 
-See [Type System Guide](../guides/type-system.md) for overload details.
+### Synchronous chain resolution
+
+When a Maybe is resolved and all handlers return raw values, the entire chain resolves synchronously — no promises, no microtask delays. This is the key advantage over Promise chaining.
+
+```typescript
+const result = Maybe.from(10)
+  .when((v) => v * 2)   // resolved: 20
+  .when((v) => v + 5);  // resolved: 25
+
+result.isResolved(); // true — no async involved
+result.value();      // 25
+```
+
+The chain becomes asynchronous the moment a handler returns a Promise. Once pending, all subsequent `when()` calls produce pending Maybes.
+
+### Error propagation
+
+A rejected Maybe skips `onResolve` handlers and propagates until an `onReject` handler catches it, mirroring Promise rejection propagation. When no handler exists for the rejection path, `when()` returns the **same instance** — no new Maybe allocated for each skipped step.
 
 ### `catch(onReject)`
 
@@ -139,9 +154,9 @@ Shortcut to `when(undefined, onReject)`.
 
 ### `finally(onFinally)`
 
-Calls `onFinally()` on resolution or rejection, preserving the original value or error (matching `Promise.finally()` semantics).
+Calls `onFinally()` on resolution or rejection, preserving the original value or error (matching `Promise.finally()` semantics). Internally uses `when()` to wrap the handler result, then chains another `when()` to restore the original value or error. If `onFinally()` returns a Promise, the chain waits for it before restoring.
 
-See [Chaining Flow](../flows/chaining.md) for detailed flow diagrams.
+See [Chaining Flow](../flows/chaining.md) for a D2 dispatch diagram and common patterns.
 
 ## Static Methods
 
@@ -164,13 +179,11 @@ if (combined.isResolved()) {
 }
 ```
 
-Four overloads narrow the return type based on input states using [MaybeTypes](maybe-types.md) constraints.
-
 ## Internal Mechanics
 
 ### `_become(otherMaybe, fromPromise)`
 
-Adopts another Maybe's state by copying internal fields. If the other Maybe is pending, registers a `when()` callback to adopt its eventual state. Creates a new wrapped promise through `when()` so that handlers execute in the context of _this_ instance.
+Adopts another Maybe's state by copying internal fields. If the other Maybe is pending, registers a `when()` callback to adopt its eventual state. Creates a new wrapped promise through `when()` so that handlers execute in the context of this instance.
 
 ### `_handleResolve(value)`
 
@@ -179,15 +192,6 @@ Called when a wrapped promise resolves. If `value` is a Maybe, delegates to `_be
 ### `_handleReject(error)`
 
 Called when a wrapped promise rejects. If `error` is a Maybe, delegates to `_become()`. Otherwise sets rejected state and returns `Promise.reject(error)` for chain semantics.
-
-## Type System Integration
-
-Maybe uses three phantom type properties (`__state`, `__value`, `__error`) declared with `declare readonly` — zero runtime cost, existing only in TypeScript's type system.
-
-- **`__state`** — enables type narrowing. `isResolved()` returns a type predicate adding `{ __state: 'resolved' }`, which overloads on `value()` and `when()` use for precise return types.
-- **`__value` / `__error`** — type brands for extracting generic parameters from intersection types where standard `infer` fails.
-
-See [Type System Guide](../guides/type-system.md) for full details.
 
 ## Gotchas
 
@@ -201,7 +205,6 @@ See [Type System Guide](../guides/type-system.md) for full details.
 ## Related Documentation
 
 - [MaybeTypes](maybe-types.md) — type-level constraint utilities
-- [PendingValueError](pending-value-error.md) — error class for pending value access
 - [Maybe Lifecycle](../flows/maybe-lifecycle.md) — state transition flows
 - [Chaining Flow](../flows/chaining.md) — `when()`/`catch()`/`finally()` flow diagrams
 - [Type System Guide](../guides/type-system.md) — phantom types, overload resolution, and type brands
