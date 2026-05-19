@@ -10,8 +10,6 @@ This document covers how `when()` dispatches by state, how chains compose, and h
 
 **Source:** [Maybe.ts](../../../js/maybe/Maybe.ts)
 
----
-
 ## The when() Method
 
 `when(onResolve?, onReject?)` is the core chaining method. Named `when` instead of `then` to prevent JavaScript from treating Maybe as a thenable — `await maybe` would unwrap the value and destroy synchronous access.
@@ -68,13 +66,6 @@ return Maybe.from(
 - Result is always a **new pending Maybe** — the chain waits for the source to settle
 - Handler selection happens when the promise settles, not at chain construction
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L380-L420) — `when()` implementation with overloads and dispatch logic
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L492-L608) — unit tests covering resolved, rejected, and pending states
-
----
-
 ## Synchronous Chain Resolution
 
 When a Maybe is resolved and all handlers return raw values, the entire chain resolves synchronously — no promises, no microtask delays.
@@ -102,12 +93,6 @@ result.isPending(); // true — must await from here
 ```
 
 Once pending, all subsequent `when()` calls produce pending Maybes, since the pending path delegates to `this._wrappedPromise.then()`.
-
-### Evidence
-
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L780-L798) — chaining test: synchronous start, async middle, async continuation
-
----
 
 ## Error Propagation
 
@@ -148,14 +133,6 @@ result.isRejected();    // true
 result.valueOrError();  // Error('handler failed')
 ```
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L396-L400) — resolved path: try/catch wrapping `onResolve`
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L407-L411) — rejected path: try/catch wrapping `onReject`
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L800-L818) — chaining test: rejection propagation and catch recovery
-
----
-
 ## Handler Return Types
 
 The return type of a `when()` handler determines the resulting Maybe's state. `Maybe.from()` handles all cases:
@@ -188,13 +165,6 @@ Maybe.from(10).when((v) => Maybe.from(v * 2));
 ```
 
 This composability means handlers can return whichever type is natural. A handler with a cached Maybe can return it directly without re-wrapping.
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L99-L107) — `Maybe.from()` implementation: `isMaybe` check and `new Maybe()` fallback
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L806-L813) — chaining test: handler returning `Maybe.from(Promise.resolve(...))`
-
----
 
 ## catch() and finally()
 
@@ -240,15 +210,6 @@ const maybe = Maybe.from(42)
 
 maybe.value(); // 42 — original value preserved
 ```
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L423-L426) — `catch()` implementation
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L435-L445) — `finally()` implementation
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L610-L670) — `catch()` tests across all three states
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L672-L740) — `finally()` tests: value preservation on resolve and reject
-
----
 
 ## D2 Diagram
 
@@ -314,8 +275,6 @@ rejected_path.return_self -> output
 pending_path.wrap -> output
 ```
 
----
-
 ## Common Patterns
 
 ### Transform a resolved value synchronously
@@ -362,6 +321,3 @@ const result = Maybe.from(primarySource())
   .when((data) => format(data));            // runs on whichever source succeeded
 ```
 
-### Evidence
-
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L778-L833) — full chaining integration tests covering resolve, reject, and mixed async flows

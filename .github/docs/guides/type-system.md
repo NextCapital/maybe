@@ -46,11 +46,6 @@ export type UnwrapValue<T> =
 
 The second branch (`{ __value: infer V; __state: any; }`) matches intersection types and extracts `T` via the `__value` brand. The third branch handles plain `Maybe<T, E>` without intersections. Both paths produce the same result — the inner value type — but through different extraction mechanisms.
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L30-L42 — `__state` phantom property declaration and documentation
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L44-L64 — `__value` phantom brand declaration and documentation
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L66-L78 — `__error` phantom brand declaration and documentation
 - [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) — `UnwrapValue<T>` uses `__value` brand for intersection type extraction
 
 ## Type Predicates
@@ -91,9 +86,6 @@ if (maybe.isRejected()) {
 
 The narrowing flows through the entire call chain. Once narrowed, the intersection type persists across method calls, assignments, and return statements until the scope ends.
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L232-L260 — `isReady()`, `isPending()`, `isResolved()`, `isRejected()` method signatures with type predicate return types
 - [type-tests.ts](../../../type-tests.ts) — Tests 5–7 verify narrowing with `isResolved()`, `isPending()`, `isRejected()`
 
 ## Method Overloads
@@ -168,15 +160,6 @@ The first three overloads match Maybe instances with a `__state` intersection. T
 
 TypeScript tries overloads top-to-bottom. `AllResolved<U>` uses `never` injection (Promises and non-resolved Maybes become `never`) to fail the constraint when any input is not resolved. `HasRejected<U>` evaluates to `never` when no rejected Maybes exist, failing the constraint. `HasPending<U>` is an identity type that always matches as the catch-all.
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L269-L290 — `value()` overloads
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L305-L326 — `promise()` overloads
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L370-L388 — `when()` 16 overloads
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L460-L476 — `suspend()` overloads
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L90-L107 — `from()` overloads with brand-based extraction
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L160-L175 — `all()` overloads with constraint types
-
 ## Utility Types
 
 The [MaybeTypes](../components/maybe-types.md) module in [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) provides the constraint and extraction types used by method overloads.
@@ -193,10 +176,7 @@ The [MaybeTypes](../components/maybe-types.md) module in [MaybeTypes.ts](../../.
 
 For detailed documentation of each type including examples, see [MaybeTypes](../components/maybe-types.md).
 
-### Evidence
-
 - [MaybeTypes.ts](../../../js/maybe/MaybeTypes.ts) — All utility type definitions
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L3-L5 — Import of `UnwrapAll`, `AllResolved`, `HasRejected`, `FirstRejected`, `HasPending`
 
 ## Type Tests
 
@@ -238,8 +218,6 @@ npm run test:types
 
 This runs the TypeScript compiler against [type-tests.ts](../../../type-tests.ts). No JavaScript is executed — the tests pass when compilation succeeds and fail when any `Expect<Equal<...>>` assertion produces a type error.
 
-### Evidence
-
 - [type-tests.ts](../../../type-tests.ts) — All 30 test groups with `Expect<Equal<...>>` assertions
 - [package.json](../../../package.json) — `test:types` script definition
 
@@ -267,12 +245,6 @@ Discriminated unions require the discriminant to be a concrete, immutable value.
 - **Overload selection** — the `this` parameter in overloads can constrain on `{ __state: 'resolved' }` to select state-specific return types
 
 **Trade-off:** Phantom types require explicit overloads for every state-dependent method, whereas discriminated unions provide narrowing automatically. This increases type declaration surface area (16 overloads for `when()` alone) but is the only viable approach given mutable state.
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L30-L42 — `declare readonly __state` (phantom, not a real property)
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L18-L26 — `_isReady` and `_isError` are the actual mutable runtime state fields
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L488-L505 — `_handleResolve()` mutates state from pending to resolved
 
 ## Adding New Type-Narrowed Methods
 
@@ -345,9 +317,6 @@ npm run test         # Runtime tests pass
 5. Type tests in [type-tests.ts](../../../type-tests.ts) cover each state's return type
 6. If the method produces intersection types that feed into `from()` or `all()`, verify the `__value`/`__error` brands extract types correctly
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts)#L269-L290 — `value()` as canonical four-overload example
 - [type-tests.ts](../../../type-tests.ts) — Test 5 as canonical type narrowing test example
 
 ## Documentation Coverage Summary
@@ -355,9 +324,9 @@ npm run test         # Runtime tests pass
 | Metric | Value |
 |--------|-------|
 | **Areas Documented** | 7 sections with full coverage |
-| **Areas Partially Covered** | 0 |
-| **Areas Unknown** | 0 |
+| **Areas Partially Covered** |
+| **Areas Unknown** |
 | **Total Evidence Citations** | 22 file paths cited across all Evidence blocks |
-| **Total UNVERIFIED Markers** | 0 |
+| **Total UNVERIFIED Markers** |
 | **Confidence Distribution** | HIGH: 7 |
 | **Coverage Scan Status** | 7/7 sections Clear |

@@ -1,12 +1,3 @@
-# AI Agent Guide
-
-> **Audience:** AI coding agents working in the `@nextcapital/maybe` codebase.
-> **Scope:** Everything you need to read, modify, test, and extend this library correctly.
-> **Not covered:** React integration patterns, deployment, publishing. See the [architecture README](../README.md) for full context.
-
-**This is a proprietary library not in AI training data.** Do not assume anything about its
-API, conventions, or structure. Follow this guide exactly.
-
 ## Critical Rules
 
 - **Source lives in `js/`, not `src/`.** All file references start with `js/`.
@@ -24,7 +15,7 @@ API, conventions, or structure. Follow this guide exactly.
 | Path | Purpose |
 | --- | --- |
 | `js/index.ts` | Package entry point. Re-exports all public modules. |
-| `js/maybe/Maybe.ts` | Core `Maybe<T, E>` class (~550 LOC). |
+| `js/maybe/Maybe.ts` | Core `Maybe<T, E>` class. |
 | `js/maybe/Maybe.test.ts` | Tests for Maybe. |
 | `js/maybe/MaybeTypes.ts` | Type utility types (`UnwrapAll`, `AllResolved`, etc.). Import with `import type` only. |
 | `js/maybe/PendingValueError.ts` | Error thrown when accessing `value()` on a pending Maybe. |
@@ -57,50 +48,41 @@ import PromiseUtils from '../promise-utils/PromiseUtils.ts';
 
 ### Default Exports
 
-Every module uses `export default`. Import accordingly:
-
-```typescript
-// CORRECT
-import Maybe from './maybe/Maybe.js';
-
-// WRONG — no named runtime exports exist
-import { Maybe } from './maybe/Maybe.js';
-```
+Every module uses `export default`. Import accordingly.
 
 ### Type-Only Imports
 
-Types from `MaybeTypes.ts` and the `Deferred` interface from `PromiseUtils.ts` must use `import type`:
-
-```typescript
-import type { UnwrapAll, AllResolved } from './MaybeTypes.js';
-import type { Deferred } from '../promise-utils/PromiseUtils.js';
-```
+Types from `MaybeTypes.ts` and the `Deferred` interface from `PromiseUtils.ts` must use `import type`.
 
 ### Entry Point Re-exports
 
-`js/index.ts` re-exports everything consumers need:
+`js/index.ts` re-exports everything consumers need. When adding a new public export, add it here.
 
-```typescript
-export { default as AsyncQueue } from './async-queue/AsyncQueue.js';
-export { default as Maybe } from './maybe/Maybe.js';
-export { default as PromiseUtils } from './promise-utils/PromiseUtils.js';
-export type { Deferred } from './promise-utils/PromiseUtils.js';
-export { default as PendingValueError } from './maybe/PendingValueError.js';
+## Development Workflow
+
+### Testing
+
+- **100% coverage** is required across all metrics
+- Tests are colocated with source files (e.g., `Maybe.test.ts` next to `Maybe.ts`)
+- Use `PromiseUtils.defer()` for controlling async flow in tests — creates a promise you
+  can resolve/reject manually
+- Run tests: `npm run test`
+
+### TypeScript
+
+- Strict mode is enabled
+- Type-level tests live in `type-tests.ts` and are validated with
+  `npm run test:types`
+
+### Full CI check
+
+Before pushing, run the full local CI pipeline to catch all issues:
+
+```bash
+npm run ci:local
 ```
 
-When adding a new public export, add it here.
-
-## NPM Scripts Reference
-
-| Command | What It Does |
-| --- | --- |
-| `npm run test` | Run all Jest tests with coverage enforcement. |
-| `npm run test:types` | Compile `type-tests.ts` with `--noEmit` to validate type-level tests. |
-| `npm run lint` | Run all linters: ESLint + markdownlint + cspell. |
-| `npm run lint:js` | Run ESLint only on `js/**/*.ts`. |
-| `npm run tsc` | Compile TypeScript to `dist/`. |
-| `npm run tsc:test` | Compile test files using `tsconfig.test.json`. |
-| `npm run ci:local` | Full CI check: lint → test → tsc → tsc:test. Run before considering work complete. |
+This runs: lint → test → tsc → tsc:test.
 
 ## Adding New Code
 
@@ -143,8 +125,6 @@ When adding a new public export, add it here.
 
 `Maybe` uses three `declare readonly` phantom properties (`__state`, `__value`, `__error`) that exist only at compile time with zero runtime cost. They enable type narrowing via intersection types and type brand extraction. Do not attempt to read or write these properties at runtime.
 
-See [Type System Guide — Phantom Type Properties](../guides/type-system.md#phantom-type-properties) for full details on how these work and why they exist.
-
 ### Method Overloads
 
 Core methods like `when()`, `from()`, and `all()` use extensive overload signatures:
@@ -173,52 +153,6 @@ All type utilities live in `js/maybe/MaybeTypes.ts`:
 
 Import these with `import type` only — they contain no runtime code.
 
-## Testing Checklist
-
-1. **Use `PromiseUtils.defer<T>()`** to create controllable promises in tests:
-
-   ```typescript
-   const deferred = PromiseUtils.defer<number>();
-   const maybe = Maybe.from(deferred.promise);
-   // maybe is pending
-   deferred.resolve(42);
-   await deferred.promise;
-   // maybe is resolved
-   ```
-
-2. **Structure tests with nested `describe` blocks** organized by state × action × handler:
-
-   ```typescript
-   describe('methodName', () => {
-     describe('when resolved', () => {
-       it('does X', () => { ... });
-     });
-     describe('when rejected', () => {
-       it('does Y', () => { ... });
-     });
-     describe('when pending', () => {
-       it('does Z', () => { ... });
-     });
-   });
-   ```
-
-3. **Use `jest.useFakeTimers()`** for time-dependent tests (e.g., `PromiseUtils.pollForCondition`, `PromiseUtils.timeout`). Call `jest.useRealTimers()` in cleanup if needed — though `restoreMocks: true` handles most mock cleanup automatically.
-
-4. **Do not manually restore mocks.** `restoreMocks: true` in `jest.config.js` auto-restores after each test.
-
-5. **Cover all branches.** 100% branch coverage is enforced. Test both success and error paths, both sync and async paths, and edge cases like `null`, `undefined`, and nested `Maybe` instances.
-
-6. **Add type tests in `type-tests.ts`** for any type-level behavior changes:
-
-   ```typescript
-   const result = Maybe.from(42);
-   type test = Expect<Equal<typeof result, Maybe<number, unknown> & { __state: 'resolved' }>>;
-   ```
-
-   Run `npm run test:types` to validate.
-
-7. **JSDoc is not required in test files.** The `jsdoc/require-jsdoc` rule is disabled for `js/**/*.test.ts`.
-
 ## Common Mistakes
 
 | Mistake | Why It's Wrong | Correct Approach |
@@ -235,39 +169,3 @@ Import these with `import type` only — they contain no runtime code.
 | Calling the method `then()` on Maybe | `when()` is intentionally named to avoid thenable detection. | Use `when()`, never `then()`. |
 | Modifying files in `dist/` | Build output is generated and gitignored. | Edit source in `js/`, then `npm run tsc` to rebuild. |
 | Creating a separate types file for a new module | Only Maybe has one due to complexity. | Put types in the module file unless they are extensive utility types. |
-
-## Verification
-
-Run these commands before considering any work complete:
-
-```bash
-# Full CI check — must pass entirely
-npm run ci:local
-```
-
-This runs, in order:
-
-1. `npm run lint` — ESLint + markdownlint + cspell (all must pass)
-2. `npm run test` — Jest with 100% coverage enforcement
-3. `npm run tsc` — TypeScript compilation to `dist/`
-4. `npm run tsc:test` — Test file compilation with `tsconfig.test.json`
-
-If you modified `type-tests.ts`, also run:
-
-```bash
-npm run test:types
-```
-
-**Do not skip any step.** A passing `npm run ci:local` is the minimum bar for any change.
-
-## Further Reading
-
-- [Getting Started](getting-started.md) — Human-oriented onboarding guide
-- [Maybe Component](../components/maybe.md) — Full Maybe API documentation
-- [PromiseUtils Component](../components/promise-utils.md) — PromiseUtils API documentation
-- [AsyncQueue Component](../components/async-queue.md) — AsyncQueue API documentation
-- [MaybeTypes Component](../components/maybe-types.md) — Type utility documentation
-- [Type System Guide](../guides/type-system.md) — Deep dive into the type system
-- [Testing Guide](../guides/testing.md) — Testing patterns and practices
-- [Maybe Lifecycle](../flows/maybe-lifecycle.md) — State transitions and promise wrapping
-- [Architecture README](../README.md) — Full architecture overview

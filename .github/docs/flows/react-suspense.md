@@ -20,11 +20,6 @@ React Suspense relies on a specific throw-based protocol during render:
 
 A data source integrating with Suspense must: return the value if ready, throw a promise if loading, throw an error if failed. `suspend()` implements exactly this.
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L447-L463) — JSDoc on `suspend()` describing the Suspense contract
-- [README.md](../../../README.md#L187-L189) — "React 18 - Suspend With Data Fetch" section
-
 ## How suspend() Works
 
 `suspend()` checks the Maybe's state and takes one of three actions:
@@ -35,7 +30,7 @@ rejected  →  throw this._error      // Error boundary catches this
 pending   →  throw this.promise()   // React Suspense catches this
 ```
 
-Implementation in [Maybe.ts](../../../js/maybe/Maybe.ts#L469-L480):
+Implementation in [Maybe.ts](../../../js/maybe/Maybe.ts):
 
 ```typescript
 suspend(): T {
@@ -63,12 +58,6 @@ suspend(): T {
 | 4 | (none — generic fallback) | `T` | Determined at runtime |
 
 When TypeScript knows the Maybe is resolved (e.g., after an `isResolved()` check or from `Maybe.all()` with all-resolved inputs), the return type narrows to `T`. When the state is `'pending'` or `'rejected'`, the return type is `never` — the method will always throw.
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L465-L468) — Four overload signatures
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L469-L480) — Implementation
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L739-L769) — Tests covering all three states
 
 ## The Waterfall Problem
 
@@ -117,12 +106,6 @@ fetchC  |████████████|
 
 All requests start in the same tick. React suspends once (if any pending) and re-renders once (when all ready). If all data is cached, `suspend()` returns immediately — no suspension.
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L140-L192) — `Maybe.all()` implementation: converts array to Maybes, checks `allResolved`, falls back to `Promise.all` for pending entries
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L469-L480) — `suspend()` implementation
-- [README.md](../../../README.md#L211-L214) — "All three requests start at once without waterfalling"
-
 ## Usage Pattern
 
 Use `Maybe.all()` + `suspend()` inside a component wrapped in a `<Suspense>` boundary:
@@ -161,11 +144,6 @@ Wrap the component in a `<Suspense>` boundary to provide a fallback:
 </Suspense>
 ```
 
-### Evidence
-
-- [README.md](../../../README.md#L191-L207) — Complete component example
-- [README.md](../../../README.md#L211-L214) — Behavioral description of the three scenarios
-
 ## Limitations
 
 `Maybe` provides the Suspense throw contract (`suspend()`) and parallel fetch coordination (`Maybe.all()`). It does **not** provide:
@@ -174,10 +152,6 @@ Wrap the component in a `<Suspense>` boundary to provide a fallback:
 | **React caching integration** | React Suspense requires a caching layer to return the same Maybe across re-renders. Without caching, each render creates a new pending Maybe and suspends infinitely. Maybe does not include this — integrate with React's caching or build your own. |
 | **Data fetching** | `reactMaybeFetch` in the example is user-provided. Maybe wraps fetch results into a synchronously-inspectable container — it does not fetch data. |
 | **Suspense boundary configuration** | Placement of `<Suspense>` boundaries, fallback components, and nesting strategies are React concerns outside Maybe's scope. |
-
-### Evidence
-
-- [README.md](../../../README.md#L216) — "the `Maybe` library on its own does not resolve the need to hook into React 18's still-nebulous caching system for suspense with data fetch"
 
 ## Diagram
 
@@ -224,11 +198,11 @@ component -> react: "render output"
 ## Documentation Coverage Summary
 
 | Metric | Value |
-| --- | --- |
+| --- |
 | **Areas Documented** | 7 sections with full coverage |
-| **Areas Partially Covered** | 0 |
-| **Areas Unknown** | 0 |
+| **Areas Partially Covered** |
+| **Areas Unknown** |
 | **Total Evidence Citations** | 11 file paths cited across all Evidence blocks |
-| **Total UNVERIFIED Markers** | 0 |
+| **Total UNVERIFIED Markers** |
 | **Confidence Distribution** | HIGH: 7 |
 | **Coverage Scan Status** | 7/7 sections Clear |

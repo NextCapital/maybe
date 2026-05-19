@@ -262,6 +262,22 @@ This will force webpack to use the top-level package for the linked module. See 
 
 The [`.github/docs/`](.github/docs/README.md) directory contains detailed architecture and design documentation targeted at developers and AI agents. It covers component deep-dives, type system internals, data flow diagrams, and onboarding guides.
 
+## NPM Scripts
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run build` | Clean and compile TypeScript to `dist/` |
+| `npm run ci:local` | Full CI pipeline: lint + test + tsc + tsc:test |
+| `npm run clean` | Remove `dist/` build output |
+| `npm run lint` | Run eslint + markdownlint + cspell |
+| `npm run lint:js` | Run eslint only on `js/**/*.ts` |
+| `npm run lint:markdown` | Run markdownlint on all markdown files |
+| `npm run lint:spelling` | Run cspell on `js/**/*.ts` |
+| `npm run test` | Run Jest with coverage |
+| `npm run test:types` | Validate type-level tests in `type-tests.ts` (compile-time only) |
+| `npm run tsc` | Compile TypeScript |
+| `npm run tsc:test` | Compile tests with `tsconfig.test.json` |
+
 ## Contributing to Maybe
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)

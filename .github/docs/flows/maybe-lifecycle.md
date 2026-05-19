@@ -27,12 +27,6 @@ State is exposed through four query methods:
 | `isPending()` | `!_isReady` |
 | `isReady()` | `_isReady` (resolved or rejected) |
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L17-L19) — `_isReady` and `_isError` field declarations
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L21-L25) — `_value`, `_error`, `_wrappedPromise` field declarations
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L231-L255) — `isReady()`, `isPending()`, `isResolved()`, `isRejected()` implementations
-
 ## Construction Paths
 
 There are four ways to create a Maybe instance. Each path determines the initial state.
@@ -110,13 +104,6 @@ const adopted = new Maybe(pending);
 adopted.isPending(); // true — will resolve when `pending` resolves
 ```
 
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L99-L108) — `Maybe.from()` implementation: returns same instance for Maybes
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L135-L140) — `Maybe.fromError()` implementation
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L196-L224) — Constructor: `_isReady`, `_value`, `_isError` assignment, promise attachment, `_become` delegation
-- [PromiseUtils.ts](../../../js/promise-utils/PromiseUtils.ts#L85-L93) — `isThenable()` implementation
-
 ## State Transitions
 
 ### Promise Resolution (`_handleResolve`)
@@ -143,12 +130,6 @@ When the wrapped promise rejects, `_handleReject(error)` executes:
 4. Calls `.catch(() => {})` to suppress unhandled rejection warnings.
 
 This enables recursive adoption: if a promise resolves to a Maybe that is itself pending, the original Maybe remains pending until the inner Maybe settles.
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L520-L528) — `_handleResolve` implementation
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L538-L549) — `_handleReject` implementation
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L487-L507) — `_become` implementation: state copy, conditional `when()` chaining, wrapped promise comment
 
 ## D2 Diagram
 
@@ -196,11 +177,6 @@ The constructor attaches handlers via `.then(_handleResolve, _handleReject)`. Th
 - Calling `value()` synchronously after constructing from a settled promise throws `PendingValueError`.
 
 Use `isReady()` or `isResolved()` to guard synchronous access, or use `when()` / `promise()` to handle the value asynchronously.
-
-### Evidence
-
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L213-L219) — Promise path in constructor: `.then()` attachment guarantees microtask-deferred resolution
-- [Maybe.ts](../../../js/maybe/Maybe.ts#L199-L204) — Raw value path: `_isReady = !isPromise` is `true` immediately
 
 ## Related Documentation
 

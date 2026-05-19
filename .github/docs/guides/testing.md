@@ -30,23 +30,19 @@ collectCoverageFrom: [
 ]
 ```
 
-### Evidence
-- [jest.config.js](../../../jest.config.js) — `coverageThreshold` enforces 100% across all metrics
-- [jest.config.js](../../../jest.config.js) — `collectCoverageFrom` excludes `js/index.ts` and test files
-
 ## Test Structure
 
 ### File Location and Naming
 
 Tests are colocated with their source files. Each source file `Foo.ts` has a corresponding `Foo.test.ts` in the same directory.
 
-| Source File | Test File | Lines |
+| Source File | Test File |
 |-------------|-----------|-------|
-| [Maybe.ts](../../../js/maybe/Maybe.ts) | [Maybe.test.ts](../../../js/maybe/Maybe.test.ts) | ~834 |
-| [PromiseUtils.ts](../../../js/promise-utils/PromiseUtils.ts) | [PromiseUtils.test.ts](../../../js/promise-utils/PromiseUtils.test.ts) | ~163 |
-| [AsyncQueue.ts](../../../js/async-queue/AsyncQueue.ts) | [AsyncQueue.test.ts](../../../js/async-queue/AsyncQueue.test.ts) | ~189 |
+| [Maybe.ts](../../../js/maybe/Maybe.ts) | [Maybe.test.ts](../../../js/maybe/Maybe.test.ts) |
+| [PromiseUtils.ts](../../../js/promise-utils/PromiseUtils.ts) | [PromiseUtils.test.ts](../../../js/promise-utils/PromiseUtils.test.ts) |
+| [AsyncQueue.ts](../../../js/async-queue/AsyncQueue.ts) | [AsyncQueue.test.ts](../../../js/async-queue/AsyncQueue.test.ts) |
 
-Type-level tests live in a separate file at the project root: [type-tests.ts](../../../type-tests.ts) (~484 lines).
+Type-level tests live in a separate file at the project root: [type-tests.ts](../../../type-tests.ts).
 
 **Why colocated:** Tests sit next to the code they verify, making coverage gaps immediately clear.
 
@@ -76,12 +72,6 @@ describe('Maybe', () => {
 ```
 
 **Why this structure:** `Maybe` has three states and many methods. Every method must be tested in every applicable state. The nested structure makes coverage gaps immediately visible.
-
-### Evidence
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts) — colocated test, nested describe blocks for state × action
-- [PromiseUtils.test.ts](../../../js/promise-utils/PromiseUtils.test.ts) — colocated test
-- [AsyncQueue.test.ts](../../../js/async-queue/AsyncQueue.test.ts) — colocated test
-- [type-tests.ts](../../../type-tests.ts) — separate type-level test file at project root
 
 ## Key Patterns
 
@@ -138,10 +128,6 @@ describe('Maybe', () => {
 - Always `await` the promise (or `promise.catch(() => {})` for rejections) before asserting post-settlement state
 
 For details on the `Deferred` type and `PromiseUtils.defer()`, see [PromiseUtils](../components/promise-utils.md).
-
-### Evidence
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L1) — imports `PromiseUtils` and `Deferred`
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L12-L20) — deferred setup in `beforeEach`
 
 ### State × Action Test Matrix
 
@@ -205,9 +191,6 @@ describe('when', () => {
 
 **When a method creates new maybes** (e.g., `when`, `catch`, `finally`), verify that the returned maybe is a distinct instance (`expect(newMaybe).not.toBe(maybe)`).
 
-### Evidence
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts) — every method tested across resolved, rejected, and pending states
-
 ### Fake Timers
 
 Use Jest fake timers for any test involving time-dependent behavior (`setTimeout`, `setInterval`, polling, timeouts).
@@ -237,10 +220,6 @@ test('resolves when the condition becomes true', async () => {
 
 **Critical:** Always call `jest.runOnlyPendingTimers()` in `afterEach` before `jest.useRealTimers()` to flush pending timers that would otherwise leak.
 
-### Evidence
-- [PromiseUtils.test.ts](../../../js/promise-utils/PromiseUtils.test.ts#L4-L11) — fake timer setup/teardown
-- [PromiseUtils.test.ts](../../../js/promise-utils/PromiseUtils.test.ts#L95-L103) — `jest.advanceTimersByTime` usage
-
 ### Unhandled Rejection Safety
 
 [Maybe.test.ts](../../../js/maybe/Maybe.test.ts) installs a global `unhandledRejection` listener. This ensures unhandled promise rejections immediately fail the test rather than silently passing.
@@ -254,9 +233,6 @@ process.on('unhandledRejection', (error) => {
 **Why:** `Maybe` manages promises internally. If error handling has a bug, a rejection could go unhandled. Without this listener, Jest would not fail the test. This converts silent failures into explicit test failures.
 
 **When to use:** Add this listener to any test file that creates Maybes from promises or tests async state transitions.
-
-### Evidence
-- [Maybe.test.ts](../../../js/maybe/Maybe.test.ts#L5-L7) — unhandled rejection listener
 
 ### Private Method Spying
 
@@ -278,10 +254,6 @@ test('defers to _performTask and returns a promise', () => {
 **Why:** `AsyncQueue.perform()` delegates to `_performTask`. Spying isolates the capacity-check and queuing logic without triggering actual task execution.
 
 **Mock restoration:** The Jest config sets `restoreMocks: true`, so all spies and mocks are automatically restored after each test. No manual `mockRestore()` calls needed.
-
-### Evidence
-- [AsyncQueue.test.ts](../../../js/async-queue/AsyncQueue.test.ts#L37) — `jest.spyOn(asyncQueue, '_performTask').mockImplementation()`
-- [jest.config.js](../../../jest.config.js) — `restoreMocks: true`
 
 ### Type-Level Testing
 
@@ -318,11 +290,6 @@ If any type assertion is wrong, `tsc --noEmit` fails with a compilation error. T
 
 For full details on the type system, see the [Type System Guide](type-system.md).
 
-### Evidence
-- [type-tests.ts](../../../type-tests.ts#L20-L23) — `Expect` and `Equal` type helpers
-- [type-tests.ts](../../../type-tests.ts#L29-L30) — type assertion on `Maybe.from(42)`
-- [package.json](../../../package.json) — `test:types` script runs `tsc --noEmit type-tests.ts`
-
 ## Running Tests
 
 | Command | Purpose |
@@ -333,9 +300,6 @@ For full details on the type system, see the [Type System Guide](type-system.md)
 | `npm run ci:local` | Full local CI check: lint + test + tsc + tsc:test |
 
 **For a complete validation pass,** run `npm run ci:local`. This mirrors CI and catches all error categories: lint violations, test failures, coverage drops, and type errors.
-
-### Evidence
-- [package.json](../../../package.json) — `scripts` section defines all commands
 
 ## Writing New Tests
 
@@ -423,11 +387,11 @@ Both must pass. Coverage must remain at 100%.
 ## Documentation Coverage Summary
 
 | Metric | Value |
-| --- | --- |
+| --- |
 | **Areas Documented** | 9 sections with full coverage |
-| **Areas Partially Covered** | 0 |
-| **Areas Unknown** | 0 |
+| **Areas Partially Covered** |
+| **Areas Unknown** |
 | **Total Evidence Citations** | 18 file paths cited across all Evidence blocks |
-| **Total UNVERIFIED Markers** | 0 |
+| **Total UNVERIFIED Markers** |
 | **Confidence Distribution** | HIGH: 9, MEDIUM: 0, LOW: 0 |
 | **Coverage Scan Status** | 9/9 categories Clear, 0 Partial, 0 Missing |

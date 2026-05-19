@@ -10,16 +10,6 @@
 
 **Why this library exists:** Native JavaScript promises are opaque — you cannot inspect their state or access resolved values synchronously. In applications mixing synchronous rendering (e.g., React) with async data fetching, this forces unnecessary async boundaries. `Maybe` solves this by tracking promise state internally, enabling patterns like React Suspense where synchronous access to cached data avoids render waterfalls.
 
-| Attribute | Value |
-|-----------|-------|
-| Package | `@nextcapital/maybe` |
-| Version | 2.1.0 |
-| License | Apache-2.0 |
-| Language | TypeScript (ES2023 target, NodeNext modules) |
-| Entry Point | `js/index.ts` → compiled to `dist/index.js` |
-| Source Lines | ~742 (source), ~1186 (tests), ~260 (type utilities) |
-| Node Requirement | >= 18 |
-
 ## Architecture
 
 Flat three-module architecture with a single dependency direction: `Maybe` depends on `PromiseUtils`, `AsyncQueue` depends on `PromiseUtils`. No circular dependencies.
@@ -59,16 +49,6 @@ maybe_module.Maybe -> promise_utils.PromiseUtils: "uses isThenable()"
 async_queue.AsyncQueue -> promise_utils.PromiseUtils: "uses defer()"
 ```
 
-### Component Inventory
-
-| Component | Responsibility | Location | Depends On |
-|-----------|---------------|----------|------------|
-| Maybe | Wraps values/promises for synchronous state access and chaining | [`js/maybe/Maybe.ts`](../../js/maybe/Maybe.ts) | PromiseUtils, PendingValueError, MaybeTypes |
-| MaybeTypes | TypeScript utility types for `Maybe.all()` and `Maybe.from()` overload resolution | [`js/maybe/MaybeTypes.ts`](../../js/maybe/MaybeTypes.ts) | Maybe (type-only import) |
-| PendingValueError | Custom error thrown when accessing a pending Maybe's value | [`js/maybe/PendingValueError.ts`](../../js/maybe/PendingValueError.ts) | None |
-| PromiseUtils | Static utility methods for promise manipulation | [`js/promise-utils/PromiseUtils.ts`](../../js/promise-utils/PromiseUtils.ts) | None |
-| AsyncQueue | Concurrency-limited async task queue | [`js/async-queue/AsyncQueue.ts`](../../js/async-queue/AsyncQueue.ts) | PromiseUtils |
-
 ## Key Concepts
 
 ### The Maybe State Machine
@@ -92,17 +72,6 @@ Maybe uses phantom type properties (`__state`, `__value`, `__error`) — compile
 ### Deferred Promises
 
 `PromiseUtils.defer()` creates a promise with externally exposed `resolve` and `reject` functions — essential for `AsyncQueue` and unit testing async code.
-
-## Glossary of Proprietary Terms
-
-| Term | Definition | Where Used |
-|------|-----------|------------|
-| Maybe | A wrapper that tracks promise state (resolved/rejected/pending) and enables synchronous value access | [`js/maybe/Maybe.ts`](../../js/maybe/Maybe.ts) |
-| Phantom type | A TypeScript type property declared with `declare` that exists only at compile time, used for type narrowing without runtime cost | [`js/maybe/Maybe.ts#L30-L78`](../../js/maybe/Maybe.ts) |
-| Type brand | The `__value` and `__error` phantom properties that enable extracting generic type parameters from intersection types | [`js/maybe/Maybe.ts#L48-L78`](../../js/maybe/Maybe.ts) |
-| Become | Internal pattern where a Maybe adopts the state of another Maybe instance (`_become` method) | [`js/maybe/Maybe.ts`](../../js/maybe/Maybe.ts) — `_become()` |
-| Deferred | An object containing a promise and its externalized `resolve`/`reject` functions | [`js/promise-utils/PromiseUtils.ts#L1-L6`](../../js/promise-utils/PromiseUtils.ts) |
-| Thenable | Any object with a `then` method — the industry-standard way to detect promise-like objects | [`js/promise-utils/PromiseUtils.ts`](../../js/promise-utils/PromiseUtils.ts) — `isThenable()` |
 
 ## Directory Structure
 
@@ -154,7 +123,7 @@ js/
 | Document | Description |
 |----------|-------------|
 | [Getting Started](onboarding/getting-started.md) | Developer onboarding — setup, usage patterns, common tasks |
-| [AI Agent Guide](onboarding/ai-agent-guide.md) | Instructions for AI agents working in this codebase |
+| [Glossary](onboarding/glossary.md) | Proprietary terms and definitions used in this codebase |
 
 ## Design Decisions
 
@@ -178,50 +147,12 @@ TypeScript cannot fully verify overloaded signatures against their implementatio
 
 The utility types (`UnwrapAll`, `AllResolved`, `HasRejected`, etc.) are complex recursive conditional types. Separating them keeps `Maybe.ts` focused on runtime behavior while isolating type-level logic. This enables `import type` usage, ensuring type utilities are tree-shaken from compiled output.
 
-## Key Files
-
-| File | Role |
-|------|------|
-| [`js/index.ts`](../../js/index.ts) | Package entry point — re-exports all public API |
-| [`js/maybe/Maybe.ts`](../../js/maybe/Maybe.ts) | Core Maybe class with all runtime logic |
-| [`js/maybe/MaybeTypes.ts`](../../js/maybe/MaybeTypes.ts) | TypeScript utility types for overload constraints |
-| [`js/maybe/PendingValueError.ts`](../../js/maybe/PendingValueError.ts) | Custom error class |
-| [`js/promise-utils/PromiseUtils.ts`](../../js/promise-utils/PromiseUtils.ts) | Promise utility functions |
-| [`js/async-queue/AsyncQueue.ts`](../../js/async-queue/AsyncQueue.ts) | Concurrency-limited task queue |
-| [`type-tests.ts`](../../type-tests.ts) | Compile-time type validation tests |
-| [`tsconfig.json`](../../tsconfig.json) | TypeScript configuration (strict, ES2023, NodeNext) |
-| [`jest.config.js`](../../jest.config.js) | Jest configuration with 100% coverage thresholds |
-
 ## Testing & Quality
 
 - **100% coverage required** across statements, branches, functions, and lines (enforced in [`jest.config.js`](../../jest.config.js)).
 - **Type tests** in [`type-tests.ts`](../../type-tests.ts) verify compile-time type behavior separately.
-- **Test runner:** Jest with `ts-jest` preset.
 - Tests colocated with source files (`*.test.ts` alongside `*.ts`).
 - See [Testing Patterns](guides/testing.md) for conventions and examples.
-
-## Build, Deploy & CI/CD
-
-| Script | Command | Purpose |
-|--------|---------|---------|
-| `npm run build` | `npm run clean && npm run tsc` | Clean and compile TypeScript to `dist/` |
-| `npm run tsc` | `tsc` | Compile TypeScript |
-| `npm run test` | `jest` | Run tests with coverage |
-| `npm run test:types` | `tsc --noEmit type-tests.ts` | Validate type-level tests |
-| `npm run lint` | eslint + markdownlint + cspell | Full lint suite |
-| `npm run ci:local` | lint + test + tsc + tsc:test | Full CI pipeline locally |
-
-Build output goes to `dist/` (gitignored). The package publishes `dist/` only (configured via `files` in `package.json`).
-
-## Extension Points
-
-| Extension Type | Directory | Convention | Canonical Example | Also Update |
-|----------------|-----------|------------|-------------------|-------------|
-| New static method on Maybe | `js/maybe/` | Add to `Maybe` class | `Maybe.from()` in [`Maybe.ts`](../../js/maybe/Maybe.ts) | Tests in `Maybe.test.ts`, type tests in `type-tests.ts` |
-| New instance method on Maybe | `js/maybe/` | Add to `Maybe` class | `when()` in [`Maybe.ts`](../../js/maybe/Maybe.ts) | Tests in `Maybe.test.ts`, type tests in `type-tests.ts` |
-| New utility type for Maybe | `js/maybe/` | Add to `MaybeTypes.ts` | `AllResolved` in [`MaybeTypes.ts`](../../js/maybe/MaybeTypes.ts) | Import in `Maybe.ts` if used by overloads |
-| New PromiseUtils method | `js/promise-utils/` | Add to `PromiseUtils` object | `defer()` in [`PromiseUtils.ts`](../../js/promise-utils/PromiseUtils.ts) | Tests in `PromiseUtils.test.ts`, export from `index.ts` if type |
-| New exported class/module | `js/<module-name>/` | Create directory with `<Name>.ts` and `<Name>.test.ts` | [`js/async-queue/`](../../js/async-queue/) | Export from `js/index.ts` |
 
 ## Gotchas and Edge Cases
 
