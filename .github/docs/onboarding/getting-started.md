@@ -1,0 +1,118 @@
+# Getting Started
+
+## Overview
+
+`@nextcapital/maybe` provides three utilities for bridging synchronous and asynchronous programming: **Maybe** (synchronous access to promise state), **PromiseUtils** (promise helpers), and **AsyncQueue** (concurrency-limited task queue). For architecture rationale and design decisions, see the [Architecture README](../README.md).
+
+## Setup
+
+### Install
+
+```bash
+npm install --save @nextcapital/maybe
+```
+
+### Import
+
+All public API is available from the package root:
+
+```typescript
+import { Maybe, PromiseUtils, AsyncQueue, PendingValueError } from '@nextcapital/maybe';
+```
+
+The `Deferred` type (returned by `PromiseUtils.defer()`) is a type-only export:
+
+```typescript
+import type { Deferred } from '@nextcapital/maybe';
+```
+
+These exports are defined in [`js/index.ts`](../../../js/index.ts).
+
+## Quick Start
+
+### Create a Maybe from a synchronous value
+
+When data is already available, `Maybe.from()` creates a resolved instance accessible
+immediately:
+
+```typescript
+const maybe = Maybe.from(42);
+
+maybe.isResolved(); // true
+maybe.isPending();  // false
+maybe.value();      // 42
+```
+
+### Create a Maybe from a promise
+
+When data is asynchronous, `Maybe.from()` tracks the promise state internally:
+
+```typescript
+const maybe = Maybe.from(fetch('/api/data'));
+
+maybe.isPending(); // true — cannot access value yet
+
+const data = await maybe.promise(); // wait for resolution
+maybe.isResolved(); // true
+maybe.value();      // data
+```
+
+> **Important:** Always `await maybe.promise()` before accessing the value synchronously.
+> See [Maybe — Gotchas](../components/maybe.md#gotchas) for tick-timing details.
+
+### Build conditionally
+
+Use `Maybe.build()` when sync vs. async depends on runtime conditions (e.g.,
+cached vs. fetched data):
+
+```typescript
+const maybe = Maybe.build(
+  hasCachedData(),       // boolean condition
+  () => getCachedData(), // sync path — called when true
+  () => fetchData()      // async path — called when false
+);
+```
+
+### Chain transformations
+
+`when()` is the Maybe equivalent of `.then()`. Chains work synchronously when
+the source is resolved:
+
+```typescript
+const result = Maybe.from(42)
+  .when(x => x * 2)
+  .when(x => x.toString());
+
+result.value(); // "84"
+```
+
+### Handle errors
+
+Create rejected Maybes and recover with `catch()`:
+
+```typescript
+const maybe = Maybe.fromError(new Error('failed'));
+
+maybe.isRejected(); // true
+
+const recovered = maybe.catch(() => 'default');
+recovered.value(); // "default"
+```
+
+### Combine multiple Maybes
+
+`Maybe.all()` works like `Promise.all()` — resolves when all inputs resolve:
+```typescript
+const combined = Maybe.all([Maybe.from(1), Maybe.from(2), Maybe.from(3)]);
+combined.value(); // [1, 2, 3]
+```
+
+### React Suspense integration
+
+`suspend()` satisfies the React Suspense contract. Use `Maybe.all()` + `suspend()` to start fetches in parallel and avoid waterfalls. See [React Suspense Guide](../guides/react-suspense.md) for the full pattern.
+
+For full details on each pattern, see:
+
+- [Maybe Component Docs](../components/maybe.md) — full API and behavior
+- [Maybe — Chaining](../components/maybe.md#chaining) — chaining patterns and dispatch diagram
+- [React Suspense Guide](../guides/react-suspense.md) — Suspense integration

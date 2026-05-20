@@ -52,13 +52,10 @@ Probably best to refer to the [in-code documentation](./js/maybe/Maybe.ts). The 
 
 ### Maybe May Not Resolve/Reject in the Same Tick
 
-You should always `await` the result of `maybe.promise()`, rather than the promise that the
-maybe was created from, before attempting to synchronously access the maybe's value.
-
-We have to use more than one `.then` internally on the promise, which means that it can take
-several ticks after the original promise resolves for the maybe instance to adopt its state.
-
-This behavior is intrinsic to promises and cannot be fixed. However, this shouldn't be a major issue: simply await the maybe instead of the promise when a reference to both the promise and the maybe exists.
+Always `await` the result of `maybe.promise()`, rather than the original promise, before
+synchronously accessing the maybe's value. Internal `.then()` chaining means the maybe adopts
+its state on a later microtask tick. See [Maybe — Gotchas](.github/docs/components/maybe.md#gotchas)
+for details.
 
 ### Async/Await Caveats
 
@@ -241,7 +238,7 @@ recommend:
 
 ### Webpack/Linking Considerations
 
-If you have multiple nested libraries that use `Maybe` as a `peerDepeneency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
+If you have multiple nested libraries that use `Maybe` as a `peerDependency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
 on your webpack config:
 
 ```javascript
@@ -257,6 +254,26 @@ on your webpack config:
 ```
 
 This will force webpack to use the top-level package for the linked module. See [this post](https://medium.com/@penx/managing-dependencies-in-a-node-package-so-that-they-are-compatible-with-npm-link-61befa5aaca7) for more.
+
+## Deep-Dive Documentation
+
+The [`.github/docs/`](.github/docs/README.md) directory contains detailed architecture and design documentation targeted at developers and AI agents. It covers component deep-dives, type system internals, data flow diagrams, and onboarding guides.
+
+## NPM Scripts
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run build` | Clean and compile TypeScript to `dist/` |
+| `npm run ci:local` | Full CI pipeline: lint + test + tsc + tsc:test |
+| `npm run clean` | Remove `dist/` build output |
+| `npm run lint` | Run eslint + markdownlint + cspell |
+| `npm run lint:js` | Run eslint only on `js/**/*.ts` |
+| `npm run lint:markdown` | Run markdownlint on all markdown files |
+| `npm run lint:spelling` | Run cspell on `js/**/*.ts` |
+| `npm run test` | Run Jest with coverage |
+| `npm run test:types` | Validate type-level tests in `type-tests.ts` (compile-time only) |
+| `npm run tsc` | Compile TypeScript |
+| `npm run tsc:test` | Compile tests with `tsconfig.test.json` |
 
 ## Contributing to Maybe
 
