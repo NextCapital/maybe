@@ -1,6 +1,6 @@
 # Testing Patterns
 
-`@nextcapital/maybe` enforces 100% code coverage and uses structured testing designed around the library's async nature. Tests verify both runtime behavior (Jest) and compile-time type correctness (`tsc`).
+Tests verify both runtime behavior (Jest) and compile-time type correctness (`tsc`). 100% coverage is enforced — see [Critical Rules](../../copilot-instructions.md).
 
 ## Test Structure
 
@@ -71,11 +71,7 @@ Covers: `Maybe.from` overloads, `Maybe.fromError`, type narrowing via state chec
 
 ## Running Tests
 
-| Command | Purpose |
-|---------|---------|
-| `npm run test` | Runtime tests + 100% coverage enforcement |
-| `npm run test:types` | Compile-time type validation |
-| `npm run ci:local` | Full check: lint + test + tsc + tsc:test |
+See the [NPM Scripts table](../../../README.md#npm-scripts) in README.md for all available commands.
 
 ## Writing New Tests
 
@@ -85,7 +81,7 @@ Covers: `Maybe.from` overloads, `Maybe.fromError`, type narrowing via state chec
 4. **Structure describes** as state × action matrix with `beforeEach` creating fresh deferreds
 5. **Write assertions** — use `deferred.resolve()`/`reject()` for state transitions, always `await` before asserting
 6. **Add type tests** in [type-tests.ts](../../../type-tests.ts) for new public API using `Expect<Equal<...>>`
-7. **Verify** — `npm run test` and `npm run test:types` must both pass at 100% coverage
+7. **Verify** — `npm run test` and `npm run test:types` must both pass
 
 ## Related Documentation
 

@@ -23,8 +23,8 @@
 | Integrate Maybe with React Suspense | [React Suspense Guide](.github/docs/guides/react-suspense.md) |
 | Onboard to the codebase | [Getting Started](.github/docs/onboarding/getting-started.md) |
 | Look up a proprietary term | [Glossary](.github/docs/onboarding/glossary.md) |
-| Understand state transition timing | [Maybe Lifecycle](.github/docs/flows/maybe-lifecycle.md) |
-| Understand `when()`/`catch()`/`finally()` dispatch | [Chaining Flow](.github/docs/flows/chaining.md) |
+| Understand state transition timing | [Maybe — Lifecycle](.github/docs/components/maybe.md#lifecycle-diagram) |
+| Understand `when()`/`catch()`/`finally()` dispatch | [Maybe — Chaining](.github/docs/components/maybe.md#chaining) |
 | Architecture overview and design decisions | [Architecture README](.github/docs/README.md) |
 
 ## Import Conventions
@@ -63,8 +63,8 @@ Types from `MaybeTypes.ts` and the `Deferred` interface from `PromiseUtils.ts` m
 - **100% coverage** is required across all metrics
 - Tests are colocated with source files (e.g., `Maybe.test.ts` next to `Maybe.ts`)
 - Use `PromiseUtils.defer()` for controlling async flow in tests
-- Run tests: `npm run test`
 - See [Testing Patterns](.github/docs/guides/testing.md) for conventions and patterns
+- See [NPM Scripts](README.md#npm-scripts) for all available commands
 
 ### TypeScript
 
@@ -74,13 +74,7 @@ Types from `MaybeTypes.ts` and the `Deferred` interface from `PromiseUtils.ts` m
 
 ### Full CI check
 
-Before pushing, run the full local CI pipeline to catch all issues:
-
-```bash
-npm run ci:local
-```
-
-This runs: lint → test → tsc → tsc:test.
+Before pushing, run `npm run ci:local` (lint → test → tsc → tsc:test).
 
 ## Type System Rules
 

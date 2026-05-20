@@ -1,8 +1,19 @@
 # MaybeTypes — Type Utilities
 
-TypeScript cannot extract generic type parameters from intersection types using standard `infer`. When `Maybe.from()` returns `Maybe<number, unknown> & { __state: 'resolved' }`, a conditional type like `T extends Maybe<infer V, any> ? V : T` fails — TypeScript sees the intersection as a single opaque type.
+Compile-time utility types powering the overloaded signatures on `Maybe.from()` and `Maybe.all()`. All types use `import type` — zero runtime cost.
 
-`MaybeTypes.ts` provides utility types that solve this. Every type is compile-time only (`import type`) and powers the overloaded signatures on `Maybe.from()` and `Maybe.all()`. Zero runtime cost.
+## The Intersection Type Problem
+
+`Maybe.from()` returns intersection types like `Maybe<number, unknown> & { __state: 'resolved' }`. Standard `infer` fails on these — TypeScript sees the intersection as an opaque type:
+
+```typescript
+// This FAILS for intersection types:
+type ExtractValue<T> = T extends Maybe<infer V, any> ? V : T;
+type Result = ExtractValue<Maybe<number, unknown> & { __state: 'resolved' }>;
+// Expected: number — Actual: fallthrough
+```
+
+The solution: `Maybe` declares phantom brand properties (`__value`, `__error`, `__state`) that survive intersection. Utility types match against these brands instead of using `infer` on `Maybe<infer V>`. See [Type System Guide](../guides/type-system.md#phantom-type-properties) for the full explanation.
 
 ## Type Reference
 
@@ -18,10 +29,10 @@ type C = UnwrapMaybe<number>;                                 // number
 
 ### UnwrapValue\<T\>
 
-Extracts the inner value type `T` from a `Maybe<T>`, `Promise<T>`, or raw value — even with a `__state` intersection. Three-branch conditional:
+Extracts the inner value type `T` from a `Maybe<T>`, `Promise<T>`, or raw value. Four-branch conditional:
 
 1. `T extends Promise<infer V>` — extracts `V`
-2. `T extends { __value: infer V; __state: any }` — matches Maybe-with-intersection using the `__value` phantom brand (standard `infer` fails for intersection types)
+2. `T extends { __value: infer V; __state: any }` — matches Maybe-with-intersection via phantom brands
 3. `T extends Maybe<infer V, any>` — matches plain Maybe
 4. Fallthrough — returns `T` unchanged
 
@@ -86,26 +97,13 @@ static all<const U extends readonly unknown[]>(
 
 ## How Maybe.from() Uses These Types
 
-`Maybe.from()` uses five overloads matching on `__value`, `__error`, and `__state` phantom brands:
+`Maybe.from()` uses five overloads matching on `__value`, `__error`, and `__state` phantom brands (not `Maybe<infer V>`, which fails on intersections — see above):
 
-1. Existing Maybe with known state (3 overloads: resolved, rejected, pending) — uses phantom brands instead of `Maybe<infer V>` because `infer` fails on intersection types
+1. Existing Maybe with known state (3 overloads: resolved, rejected, pending)
 2. Promise → pending
 3. Raw value → resolved
 
 `UnwrapMaybe<T>` prevents type nesting: `Maybe.from(Maybe<Maybe<number>>)` flattens to `Maybe<number>`.
-
-## The Intersection Type Problem
-
-`Maybe.from()` returns intersection types like `Maybe<number, unknown> & { __state: 'resolved' }`. Standard conditional type matching fails:
-
-```typescript
-// This FAILS for intersection types:
-type ExtractValue<T> = T extends Maybe<infer V, any> ? V : T;
-type Result = ExtractValue<Maybe<number, unknown> & { __state: 'resolved' }>;
-// Expected: number — Actual: fallthrough
-```
-
-The `Maybe` class declares phantom brand properties (`__state`, `__value`, `__error`) that provide flat structural properties surviving intersection. See [Type System Guide](../guides/type-system.md#phantom-type-properties) for the full explanation.
 
 ## Adding New Utility Types
 

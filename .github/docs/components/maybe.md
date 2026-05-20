@@ -12,6 +12,41 @@ Three states:
 
 A Maybe starts in one state and transitions at most once (pending → resolved or pending → rejected). Resolved and rejected are terminal.
 
+## Lifecycle Diagram
+
+```d2
+direction: down
+
+construction: Construction {
+  raw: "Maybe.from(value)" {shape: rectangle}
+  promise: "Maybe.from(promise)" {shape: rectangle}
+  error: "Maybe.fromError(error)" {shape: rectangle}
+  adopt: "new Maybe(otherMaybe)" {shape: rectangle}
+}
+
+pending: Pending {
+  style.fill: "#fff3cd"
+}
+
+resolved: Resolved {
+  style.fill: "#d4edda"
+}
+
+rejected: Rejected {
+  style.fill: "#f8d7da"
+}
+
+construction.raw -> resolved: "immediate"
+construction.promise -> pending: "attaches .then()"
+construction.error -> rejected: "immediate"
+construction.adopt -> pending: "if otherMaybe pending"
+construction.adopt -> resolved: "if otherMaybe resolved"
+construction.adopt -> rejected: "if otherMaybe rejected"
+
+pending -> resolved: "_handleResolve(value)"
+pending -> rejected: "_handleReject(error)"
+```
+
 ## Construction
 
 ### `Maybe.from(thing)`
@@ -50,7 +85,7 @@ Creates a rejected Maybe directly. Returns `Maybe<undefined, V> & { __state: 're
 
 ## State Inspection
 
-All four methods return type predicates that narrow the phantom `__state`.
+All four methods return type predicates that narrow the phantom `__state`. For how phantom types and overloads work, see [Type System Guide](../guides/type-system.md).
 
 | Method | Returns `true` when | Type narrowing |
 |---|---|---|
@@ -104,9 +139,71 @@ function MyComponent({ dataMaybe }: { dataMaybe: Maybe<Data> }) {
 
 ## Chaining
 
+### Dispatch Diagram
+
+```d2
+direction: down
+
+title: when() Chain Resolution {
+  shape: text
+  style.font-size: 20
+}
+
+input: Input Maybe
+check_state: Check State {shape: diamond}
+
+input -> check_state
+
+resolved_path: Resolved Path {
+  has_handler: onResolve? {shape: diamond}
+  call_handler: Call onResolve(value)
+  wrap_result: Maybe.from(result)
+  catch_error: Maybe.fromError(error)
+  return_self: Return same instance
+}
+
+rejected_path: Rejected Path {
+  has_handler: onReject? {shape: diamond}
+  call_handler: Call onReject(error)
+  wrap_result: Maybe.from(result)
+  catch_error: Maybe.fromError(error)
+  return_self: Return same instance
+}
+
+pending_path: Pending Path {
+  delegate: promise.then(onResolve, onReject)
+  wrap: Maybe.from(promise)
+}
+
+check_state -> resolved_path.has_handler: "resolved"
+check_state -> rejected_path.has_handler: "rejected"
+check_state -> pending_path.delegate: "pending"
+
+resolved_path.has_handler -> resolved_path.call_handler: "yes"
+resolved_path.has_handler -> resolved_path.return_self: "no"
+resolved_path.call_handler -> resolved_path.wrap_result: "success"
+resolved_path.call_handler -> resolved_path.catch_error: "throws"
+
+rejected_path.has_handler -> rejected_path.call_handler: "yes"
+rejected_path.has_handler -> rejected_path.return_self: "no"
+rejected_path.call_handler -> rejected_path.wrap_result: "success"
+rejected_path.call_handler -> rejected_path.catch_error: "throws"
+
+pending_path.delegate -> pending_path.wrap: "settles"
+
+output: Output Maybe
+resolved_path.wrap_result -> output
+resolved_path.catch_error -> output
+resolved_path.return_self -> output
+rejected_path.wrap_result -> output
+rejected_path.catch_error -> output
+rejected_path.return_self -> output
+pending_path.wrap -> output
+```
+
 ### `when(onResolve?, onReject?)`
 
-The Maybe equivalent of `Promise.then()`. Named `when` (not `then`) to prevent JavaScript from treating Maybe as a thenable.
+The Maybe equivalent of `Promise.then()`. Named `when` (not `then`) to prevent JavaScript from treating Maybe as a thenable — see [design rationale](../README.md#why-when-instead-of-then).
 
 | State | `onResolve` provided | `onReject` provided | Result |
 |---|---|---|---|
@@ -156,7 +253,48 @@ Shortcut to `when(undefined, onReject)`.
 
 Calls `onFinally()` on resolution or rejection, preserving the original value or error (matching `Promise.finally()` semantics). Internally uses `when()` to wrap the handler result, then chains another `when()` to restore the original value or error. If `onFinally()` returns a Promise, the chain waits for it before restoring.
 
-See [Chaining Flow](../flows/chaining.md) for a D2 dispatch diagram and common patterns.
+### Common Patterns
+
+Transform a resolved value synchronously:
+
+```typescript
+const name = Maybe.from(user).when((u) => u.name);
+// If user Maybe is resolved, name Maybe is also resolved — synchronous
+```
+
+Recover from rejection with a default:
+
+```typescript
+const safe = riskyMaybe.catch(() => defaultValue);
+// Rejection is caught; safe is resolved with defaultValue
+```
+
+Chain synchronous and asynchronous steps:
+
+```typescript
+const result = Maybe.from(rawInput)
+  .when((input) => validate(input))         // synchronous validation
+  .when((valid) => fetchData(valid.id))      // returns Promise → becomes pending
+  .when((data) => transform(data));          // runs after fetchData settles
+```
+
+Cleanup with finally:
+
+```typescript
+const result = Maybe.from(acquireResource())
+  .when((resource) => process(resource))
+  .finally(() => releaseResource());
+// releaseResource() runs regardless of success or failure
+// result holds the output of process(), not releaseResource()
+```
+
+Error recovery mid-chain:
+
+```typescript
+const result = Maybe.from(primarySource())
+  .catch(() => fallbackSource())            // recover from primary failure
+  .when((data) => format(data));            // runs on whichever source succeeded
+```
 
 ## Static Methods
 
@@ -205,6 +343,6 @@ Called when a wrapped promise rejects. If `error` is a Maybe, delegates to `_bec
 ## Related Documentation
 
 - [MaybeTypes](maybe-types.md) — type-level constraint utilities
-- [Maybe Lifecycle](../flows/maybe-lifecycle.md) — state transition flows
-- [Chaining Flow](../flows/chaining.md) — `when()`/`catch()`/`finally()` flow diagrams
 - [Type System Guide](../guides/type-system.md) — phantom types, overload resolution, and type brands
+- [React Suspense Guide](../guides/react-suspense.md) — Suspense integration using `suspend()`
+- [Architecture README](../README.md) — design decisions and rationale

@@ -52,13 +52,10 @@ Probably best to refer to the [in-code documentation](./js/maybe/Maybe.ts). The 
 
 ### Maybe May Not Resolve/Reject in the Same Tick
 
-You should always `await` the result of `maybe.promise()`, rather than the promise that the
-maybe was created from, before attempting to synchronously access the maybe's value.
-
-We have to use more than one `.then` internally on the promise, which means that it can take
-several ticks after the original promise resolves for the maybe instance to adopt its state.
-
-This behavior is intrinsic to promises and cannot be fixed. However, this shouldn't be a major issue: simply await the maybe instead of the promise when a reference to both the promise and the maybe exists.
+Always `await` the result of `maybe.promise()`, rather than the original promise, before
+synchronously accessing the maybe's value. Internal `.then()` chaining means the maybe adopts
+its state on a later microtask tick. See [Maybe — Gotchas](.github/docs/components/maybe.md#gotchas)
+for details.
 
 ### Async/Await Caveats
 
@@ -241,7 +238,7 @@ recommend:
 
 ### Webpack/Linking Considerations
 
-If you have multiple nested libraries that use `Maybe` as a `peerDepeneency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
+If you have multiple nested libraries that use `Maybe` as a `peerDependency`, and you want to use `npm link` to link to one of them locally, you'll probably want to set the following
 on your webpack config:
 
 ```javascript

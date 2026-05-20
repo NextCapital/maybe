@@ -2,25 +2,7 @@
 
 ## Overview
 
-`@nextcapital/maybe` solves a fundamental problem with JavaScript promises: **you cannot
-inspect their state or access resolved values synchronously**. In applications mixing
-synchronous rendering (e.g., React) with async data fetching, this forces unnecessary
-async boundaries and render waterfalls.
-
-This library provides three utilities:
-
-| Component | Purpose | Location |
-| --------- | ------- |
-| **Maybe** | Wraps values or promises for synchronous state inspection and value access. Three states: resolved, rejected, pending. | [`js/maybe/Maybe.ts`](../../../js/maybe/Maybe.ts) |
-| **PromiseUtils** | Static promise helpers: `defer()`, `serialize()`, `pollForCondition()`, `isThenable()`, `timeout()`. | [`js/promise-utils/PromiseUtils.ts`](../../../js/promise-utils/PromiseUtils.ts) |
-| **AsyncQueue** | Concurrency-limited async task queue. | [`js/async-queue/AsyncQueue.ts`](../../../js/async-queue/AsyncQueue.ts) |
-
-**When to use this library:**
-
-- You need to synchronously check whether async data is available before rendering
-- You want React Suspense integration for async data
-- You need to chain transformations that may be sync or async
-- You need concurrency-limited task execution or promise utilities like deferreds and polling
+`@nextcapital/maybe` provides three utilities for bridging synchronous and asynchronous programming: **Maybe** (synchronous access to promise state), **PromiseUtils** (promise helpers), and **AsyncQueue** (concurrency-limited task queue). For architecture rationale and design decisions, see the [Architecture README](../README.md).
 
 ## Setup
 
@@ -75,9 +57,8 @@ maybe.isResolved(); // true
 maybe.value();      // data
 ```
 
-> **Important:** Always `await maybe.promise()` — not the original promise — before accessing
-> the value synchronously. The Maybe needs an extra tick after the promise resolves
-> to adopt its state.
+> **Important:** Always `await maybe.promise()` before accessing the value synchronously.
+> See [Maybe — Gotchas](../components/maybe.md#gotchas) for tick-timing details.
 
 ### Build conditionally
 
@@ -128,14 +109,10 @@ combined.value(); // [1, 2, 3]
 
 ### React Suspense integration
 
-`suspend()` satisfies the React Suspense contract — returns the value if ready, throws
-the promise if pending:
-```typescript
-const [a, b] = Maybe.all([fetchA(), fetchB()]).suspend();
-```
+`suspend()` satisfies the React Suspense contract. Use `Maybe.all()` + `suspend()` to start fetches in parallel and avoid waterfalls. See [React Suspense Guide](../guides/react-suspense.md) for the full pattern.
 
 For full details on each pattern, see:
 
 - [Maybe Component Docs](../components/maybe.md) — full API and behavior
-- [Chaining Flow](../flows/chaining.md) — detailed chaining patterns
+- [Maybe — Chaining](../components/maybe.md#chaining) — chaining patterns and dispatch diagram
 - [React Suspense Guide](../guides/react-suspense.md) — Suspense integration

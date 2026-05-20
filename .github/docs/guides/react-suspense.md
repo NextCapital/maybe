@@ -1,10 +1,6 @@
 # React Suspense Integration
 
-React Suspense expects components to signal loading by throwing promises during render. [Maybe](../components/maybe.md)'s `suspend()` method implements this contract: returns the value if resolved, throws the error if rejected, or throws the promise if pending. React suspends the component, shows a fallback, and re-renders on settlement.
-
-Without Maybe, naive Suspense data fetching creates sequential waterfalls — each pending fetch suspends, and the next starts only on re-render. `Maybe.all()` + `suspend()` eliminates this by starting all fetches immediately and throwing a single composite promise.
-
-This document covers the Suspense contract, how `suspend()` fulfills it, the waterfall problem, and the `Maybe.all()` + `suspend()` solution.
+React Suspense expects components to signal loading by throwing promises during render. [Maybe](../components/maybe.md)'s `suspend()` method implements this contract: returns the value if resolved, throws the error if rejected, or throws the promise if pending.
 
 ## The Suspense Contract
 
@@ -59,16 +55,7 @@ When TypeScript knows the Maybe is resolved (e.g., after an `isResolved()` check
 
 ## The Waterfall Problem
 
-React Suspense creates a waterfall when a component needs multiple independent data sources:
-
-1. Component renders and calls `fetchA()`, which throws a promise (pending).
-2. React suspends the component and shows the fallback.
-3. When `fetchA` resolves, React re-renders the component.
-4. Component calls `fetchA()` again (cached, returns immediately), then calls `fetchB()`, which throws a promise (pending).
-5. React suspends again.
-6. When `fetchB` resolves, React re-renders. Now `fetchC()` starts...
-
-Each fetch starts only after the previous completes. Three independent requests that could run in parallel (~200ms each) take ~600ms sequentially.
+Standard Suspense data fetching creates sequential waterfalls: each pending fetch suspends the component, and the next fetch starts only after re-render. Three independent requests that could run in parallel (~200ms each) take ~600ms sequentially.
 
 ```
 Without Maybe — sequential waterfall:
@@ -79,8 +66,6 @@ fetchC                              |████████████|
         ├────────────┼─────────────┼─────────────┤
         0ms        200ms         400ms         600ms
 ```
-
-The root cause: standard Suspense data sources throw on the *first* pending fetch, preventing subsequent fetches from starting.
 
 ## Maybe.all() + suspend() Solution
 
@@ -190,5 +175,5 @@ component -> react: "render output"
 
 - [Maybe](../components/maybe.md) — Core Maybe class documentation
 - [Maybe — Value Access](../components/maybe.md#value-access) — `PendingValueError` thrown by `value()` when pending (distinct from `suspend()`, which throws the promise instead)
-- [Maybe Lifecycle](maybe-lifecycle.md) — State model and transitions
-- [Chaining](chaining.md) — `when()`, `catch()`, `finally()` flow
+- [Maybe — Lifecycle](../components/maybe.md#lifecycle-diagram) — State model and transitions
+- [Maybe — Chaining](../components/maybe.md#chaining) — `when()`, `catch()`, `finally()` dispatch

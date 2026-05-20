@@ -53,7 +53,7 @@ async_queue.AsyncQueue -> promise_utils.PromiseUtils: "uses defer()"
 
 - **Maybe State Machine** — Three states (resolved, rejected, pending) with one-directional transitions. See [Maybe](components/maybe.md).
 - **Phantom Type Narrowing** — Compile-time state tracking via `__state`, `__value`, `__error` phantom properties. See [Type System Guide](guides/type-system.md).
-- **Maybe Chaining** — `when()` chains that preserve synchronous resolution. See [Chaining Flow](flows/chaining.md).
+- **Maybe Chaining** — `when()` chains that preserve synchronous resolution. See [Maybe — Chaining](components/maybe.md#chaining).
 - **Deferred Promises** — Externally-controllable promises via `PromiseUtils.defer()`. See [PromiseUtils](components/promise-utils.md).
 
 ## Design Decisions
@@ -78,13 +78,19 @@ For additional design rationale (phantom types vs discriminated unions), see [Ty
 
 ## Testing & Quality
 
-100% coverage required across all metrics. Type tests in [`type-tests.ts`](../../type-tests.ts) verify compile-time behavior separately. See [Testing Patterns](guides/testing.md).
+See [Testing Patterns](guides/testing.md) for conventions and [Critical Rules](../copilot-instructions.md) for coverage requirements. Type tests in [`type-tests.ts`](../../type-tests.ts) verify compile-time behavior separately.
 
 ## Gotchas
 
 - **Do not return a Maybe from an `async` function.** The return value would be `Promise<Maybe<T>>`, defeating its purpose.
 
 For implementation-level gotchas (tick timing, `instanceof` boundaries, rejection suppression, recursive `_become()`), see [Maybe — Gotchas](components/maybe.md#gotchas).
+
+## Doc Map
+
+- [Components](components/) — Maybe, PromiseUtils, AsyncQueue, MaybeTypes
+- [Guides](guides/) — type system, testing patterns, React Suspense
+- [Onboarding](onboarding/) — getting started, glossary
 
 ## Related Documentation
 
