@@ -54,5 +54,8 @@
     "markdownlint-cli": "^0.48.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "js-yaml": "^4.2.0"
   }
 }
